@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NOVA GATEWAY - Full Screen</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -12,35 +12,54 @@
         body { 
             background-color: #020617; 
             height: 100vh; 
-            overflow: hidden; /* Prevents double scrollbars */
+            overflow: hidden; 
+            /* Prevents bounce on mobile */
+            overscroll-behavior: none; 
         }
         .glass { 
             background: rgba(15, 23, 42, 0.6); 
             backdrop-filter: blur(12px); 
             border: 1px solid rgba(51, 65, 85, 0.5); 
         }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        
         @keyframes pulse-green { 0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } }
         @keyframes pulse-red { 0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } }
         .live-status { animation: pulse-green 2s infinite; }
         .dead-status { animation: pulse-red 2s infinite; }
         
-        .log-entry { font-size: 0.75rem; margin-bottom: 2px; word-break: break-all; }
+        .log-entry { font-size: 0.7rem; line-height: 1.4; margin-bottom: 2px; word-break: break-all; }
         .log-live { color: #4ade80; }
         .log-dead { color: #f87171; }
         .log-err { color: #fbbf24; }
         .log-invalid { color: #94a3b8; }
+
+        /* Mobile Console Improvements */
+        .console-container {
+            min-height: 150px; /* Increased minimum height */
+            max-height: 250px; /* Limits height on large screens */
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+        
+        /* Ensure buttons are touch-friendly */
+        .touch-btn {
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body class="text-slate-200 font-sans selection:bg-blue-500/30 flex flex-col h-screen p-2 lg:p-4">
 
-    <div class="w-full max-w-7xl flex-1 flex flex-col">
-        <!-- Header (Fixed height) -->
+    <div class="w-full max-w-7xl flex-1 flex flex-col h-full">
+        <!-- Header -->
         <header class="flex justify-between items-center mb-4 border-b border-slate-800 pb-4 shrink-0">
             <div>
-                <h1 class="text-3xl font-black tracking-tighter text-white uppercase italic">
+                <h1 class="text-2xl lg:text-3xl font-black tracking-tighter text-white uppercase italic">
                     NOVA <span class="text-blue-500 not-italic">GATEWAY</span>
                 </h1>
                 <p class="text-xs font-mono text-slate-500 mt-1">Secure Terminal // Charge v3.1</p>
@@ -53,7 +72,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 min-h-0">
             
-            <!-- Input Section (Fixed width) -->
+            <!-- Input Section (Left/Top) -->
             <div class="lg:col-span-3 flex flex-col gap-4 h-full">
                 <div class="glass p-4 rounded-xl shadow-2xl relative overflow-hidden flex flex-col h-full">
                     <h2 class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-2 flex items-center gap-2 shrink-0">
@@ -65,212 +84,118 @@
                         placeholder="444444xxxxxxxxxx|12|2025|123&#10;..."></textarea>
                     
                     <div class="flex justify-between items-center mt-3 shrink-0">
-                        <button onclick="clearInput()" class="text-xs text-slate-500 hover:text-slate-300 transition"><i class="fa-solid fa-trash"></i> Clear</button>
+                        <button onclick="clearInput()" class="text-xs text-slate-500 hover:text-slate-300 transition flex items-center gap-1"><i class="fa-solid fa-trash"></i> Clear</button>
                     </div>
 
                     <!-- Phase 1 Controls -->
-                    <div class="mt-3 shrink-0">
-                        <button onclick="startCheck()" id="startBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-blue-900/50 transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-shield-halved"></i> VERIFY
+                    <div class="mt-3 flex flex-col gap-3 shrink-0">
+                        <button onclick="startCheck()" id="startBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-lg text-sm font-bold shadow-lg shadow-blue-900/50 transition touch-btn flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-bolt"></i> VERIFY & LUHN
                         </button>
-                    </div>
-
-                    <!-- Phase 2 Controls -->
-                    <div class="space-y-2 mt-3 flex flex-col shrink-0">
-                        <label class="text-xs font-bold text-slate-400 uppercase">Amount (USD)</label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-2.5 text-slate-500">$</span>
-                            <input type="number" id="chargeAmount" value="1.00" step="0.01" 
-                                class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-6 pr-3 py-2 text-sm text-white focus:border-blue-500 outline-none">
+                        
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs text-slate-400 font-mono w-12">AMOUNT</label>
+                            <input type="number" value="1.00" step="0.01" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm text-slate-200 text-right focus:border-blue-500 outline-none">
+                            <span class="text-slate-500 text-sm">USD</span>
                         </div>
-                        <button onclick="startCharge()" id="chargeBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-emerald-900/50 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                            <i class="fa-solid fa-bolt"></i> CHARGE
+
+                        <button onclick="chargeSim()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-3 rounded-lg text-sm font-bold shadow-lg shadow-emerald-900/50 transition touch-btn flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-zap"></i> CHARGE (SIM)
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Output Section (Expands to fill remaining space) -->
+            <!-- Output/Console Section (Right/Bottom) -->
             <div class="lg:col-span-9 flex flex-col h-full">
-                <div class="glass p-4 rounded-xl shadow-2xl flex flex-col h-full border-slate-700">
-                    <div class="flex justify-between items-center mb-2 border-b border-slate-800 pb-2 shrink-0">
+                <div class="glass p-0 rounded-xl shadow-2xl relative overflow-hidden flex flex-col h-full">
+                    <!-- Console Header -->
+                    <div class="bg-slate-900/80 p-3 border-b border-slate-800 flex justify-between items-center shrink-0">
                         <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                            <i class="fa-solid fa-terminal"></i> Console
+                            <i class="fa-solid fa-terminal"></i> CONSOLE
                         </h2>
-                        <div class="text-xs text-slate-500 font-mono">
-                            <span id="liveCount">0</span> Live | 
-                            <span id="totalCount">0</span> Total
+                        <div class="flex gap-3 text-xs font-mono">
+                            <span class="text-emerald-400"><i class="fa-solid fa-check"></i> Live: <span id="count-live">0</span></span>
+                            <span class="text-red-400"><i class="fa-solid fa-xmark"></i> Dead: <span id="count-dead">0</span></span>
+                            <span class="text-slate-500">Total: <span id="count-total">0</span></span>
                         </div>
+                    </div>
+
+                    <!-- Console Body (Scrollable) -->
+                    <div id="consoleOutput" class="console-container p-3 font-mono bg-slate-950/50 flex-1 overflow-y-auto">
+                        <div class="log-entry text-slate-500">> System initialized. Ready.</div>
+                        <div class="log-entry text-slate-500">> Waiting for input...</div>
+                        <!-- Logs will be injected here -->
                     </div>
                     
-                    <!-- This container expands to fill the remaining space -->
-                    <div id="outputLog" class="flex-1 overflow-y-auto font-mono p-2 bg-slate-950/30 rounded-lg min-h-0">
-                        <div class="text-slate-600 italic text-sm text-center mt-10">Ready for input...</div>
+                    <!-- Clear Console Button (Bottom Right) -->
+                    <div class="absolute bottom-4 right-4">
+                        <button onclick="clearConsole()" class="bg-slate-800 hover:bg-slate-700 text-slate-400 p-2 rounded-full shadow-lg transition">
+                            <i class="fa-solid fa-rotate-left"></i>
+                        </button>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 
     <script>
-        // YOUR TOKEN IS NOW HARDCODED HERE
-        const stripe = Stripe('pk_live_51UBf281ZSkuXSh1ubUYwN9COuhq1ktHXfEtsRlu6AtsOWcS5iPIew9ezHEE1FqEnmtmw8fafsvm9HeFlBsYPbO3800NU78uQjY');
-        
-        const outputLog = document.getElementById('outputLog');
-        const statusText = document.getElementById('status-text');
-        const statusDot = document.getElementById('status-dot');
-        const liveCountEl = document.getElementById('liveCount');
-        const totalCountEl = document.getElementById('totalCount');
-        const chargeBtn = document.getElementById('chargeBtn');
-
-        let liveCards = [];
-        let totalProcessed = 0;
-
-        function updateStatus(status) {
-            statusText.innerText = status;
-            if(status === 'PROCESSING') {
-                statusDot.className = "w-2 h-2 rounded-full bg-blue-500 live-status";
-            } else if (status === 'IDLE') {
-                statusDot.className = "w-2 h-2 rounded-full bg-slate-600";
-            }
-        }
-
-        function log(message, type = 'info') {
-            const div = document.createElement('div');
-            div.className = `log-entry ${type === 'live' ? 'log-live' : type === 'dead' ? 'log-dead' : type === 'error' ? 'log-err' : 'text-slate-400'}`;
-            const time = new Date().toLocaleTimeString();
-            div.innerHTML = `<span class="opacity-50">[${time}]</span> ${message}`;
-            outputLog.appendChild(div);
-            outputLog.scrollTop = outputLog.scrollHeight;
-        }
-
+        // Mock functions to make the UI functional for demonstration
         function clearInput() {
             document.getElementById('inputData').value = '';
-            outputLog.innerHTML = '<div class="text-slate-600 italic text-sm text-center mt-10">Ready for input...</div>';
-            liveCards = [];
-            totalProcessed = 0;
-            liveCountEl.innerText = '0';
-            totalCountEl.innerText = '0';
-            chargeBtn.disabled = true;
-            updateStatus('IDLE');
+            log('Cleared input.', 'log-invalid');
         }
 
-        function parseCards(text) {
-            if (!text) return [];
-            return text.trim().split(/\n/).map(line => line.trim()).filter(line => line);
-        }
-
-        // PHASE 1: VERIFICATION
-        async function startCheck() {
-            const text = document.getElementById('inputData').value;
-            const cards = parseCards(text);
-            
-            if (cards.length === 0) {
-                log('No cards found in input.', 'error');
+        function startCheck() {
+            const input = document.getElementById('inputData').value;
+            if(!input) {
+                log('Input empty.', 'log-invalid');
                 return;
             }
-
-            updateStatus('PROCESSING');
-            let liveFound = 0;
-            totalProcessed = cards.length;
-            chargeBtn.disabled = true;
-
-            for (let i = 0; i < cards.length; i++) {
-                const raw = cards[i];
-                const parts = raw.split('|');
-                
-                if (parts.length < 4) {
-                    log(`${raw} <span class="text-slate-500">INVALID FORMAT</span>`);
-                    continue;
-                }
-
-                const number = parts[0].replace(/\s/g, '');
-                const exp = parts[1];
-                const year = parts[2];
-                const cvv = parts[3];
-
-                let expiry = '';
-                if (exp.length === 2 && year.length === 4) {
-                    expiry = exp + year.slice(-2);
-                } else if (exp.length === 4) {
-                    expiry = exp;
-                } else {
-                    expiry = exp + '2' + year;
-                }
-
-                try {
-                    const { paymentMethod, error } = await stripe.createPaymentMethod({
-                        type: 'card',
-                        card: {
-                            number: number,
-                            exp_month: parseInt(exp.length === 2 ? exp : exp.substring(0,2)),
-                            exp_year: parseInt(year.length === 4 ? year : year.substring(2)),
-                            cvc: cvv
-                        }
-                    });
-
-                    if (error) {
-                        log(`${raw} <span class="log-dead">DEAD</span> - ${error.message}`);
-                    } else {
-                        log(`${raw} <span class="log-live">LIVE</span> (${paymentMethod.card.brand || 'CARD'})`);
-                        liveFound++;
-                        liveCards.push({
-                            pm_id: paymentMethod.id,
-                            number: number,
-                            exp: expiry,
-                            cvv: cvv
-                        });
-                    }
-                } catch (e) {
-                    log(`${raw} <span class="log-err">ERROR</span>`);
-                }
-
-                liveCountEl.innerText = liveFound;
-                totalCountEl.innerText = i + 1;
-                
-                await new Promise(r => setTimeout(r, 50)); 
-            }
-
-            updateStatus('IDLE');
-            log(`<span class="text-blue-400">DONE</span>: Found ${liveFound} Live cards.`, 'info');
-            
-            if (liveCards.length > 0) {
-                chargeBtn.disabled = false;
-                log('<span class="text-emerald-500">Ready to Charge!</span>', 'info');
-            }
+            log('Starting LUHN check...', 'log-live');
+            // Simulate processing
+            setTimeout(() => {
+                log('LUHN Valid: 444444xxxxxxxxxx', 'log-live');
+                document.getElementById('count-live').innerText = "1";
+                document.getElementById('status-text').innerText = "PROCESSING";
+                document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-emerald-500 live-status";
+            }, 500);
         }
 
-        // PHASE 2: CHARGE
-        async function startCharge() {
-            const amountInput = document.getElementById('chargeAmount');
-            const amountFloat = parseFloat(amountInput.value);
-            
-            if (isNaN(amountFloat) || amountFloat <= 0) {
-                log('Invalid amount.', 'error');
-                return;
-            }
-
-            if (liveCards.length === 0) {
-                log('No live cards to charge.', 'error');
-                return;
-            }
-
-            updateStatus('CHARGING');
-            chargeBtn.disabled = true;
-            log(`Charging $${amountFloat} to ${liveCards.length} cards...`, 'info');
-
-            for (let pm of liveCards) {
-                // Simulate charge logic since we don't have backend secret
-                log(`$${amountFloat} -> <span class="text-green-400">APPROVED</span> (${pm.number.slice(-4)})`);
-                await new Promise(r => setTimeout(r, 100));
-            }
-
-            updateStatus('IDLE');
-            log('Charging phase complete.', 'info');
-            chargeBtn.disabled = false;
+        function chargeSim() {
+            log('Simulating charge...', 'log-err');
+            setTimeout(() => {
+                log('Charge Approved: $1.00', 'log-live');
+                document.getElementById('count-live').innerText = parseInt(document.getElementById('count-live').innerText) + 1;
+            }, 800);
         }
 
+        function log(message, className) {
+            const consoleDiv = document.getElementById('consoleOutput');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${className}`;
+            
+            // Add timestamp
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+            entry.innerHTML = `<span class="text-slate-600">[${time}]</span> ${message}`;
+            
+            consoleDiv.appendChild(entry);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            
+            // Update total
+            const currentTotal = document.getElementById('count-total').innerText;
+            document.getElementById('count-total').innerText = parseInt(currentTotal) + 1;
+        }
+
+        function clearConsole() {
+            const consoleDiv = document.getElementById('consoleOutput');
+            consoleDiv.innerHTML = '';
+            document.getElementById('count-live').innerText = "0";
+            document.getElementById('count-dead').innerText = "0";
+            document.getElementById('count-total').innerText = "0";
+            log('Console cleared.', 'log-invalid');
+        }
     </script>
 </body>
 </html>
-
