@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NOVA GATEWAY - Mass CC Checker</title>
+    <title>NOVA GATEWAY - Enhanced Mass Checker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -30,14 +30,6 @@
         .dead-status { animation: pulse-red 2s infinite; }
         .vbv-status { animation: pulse-blue 2s infinite; }
 
-        .log-entry { font-size: 0.75rem; margin-bottom: 2px; word-break: break-all; font-family: monospace; }
-        .log-live { color: #4ade80; }
-        .log-dead { color: #f87171; }
-        .log-vbv { color: #60a5fa; }
-        .log-err { color: #fbbf24; }
-        .log-info { color: #94a3b8; }
-
-        /* Table Styling */
         .table-container {
             overflow-y: auto;
             flex: 1;
@@ -62,6 +54,29 @@
         .btn-copy:hover {
             background-color: rgba(255,255,255,0.1);
         }
+        
+        /* Toast Notification */
+        #toast {
+            visibility: hidden;
+            min-width: 250px; 
+            background-color: #10b981;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 16px;
+            position: fixed;
+            z-index: 50;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="text-slate-200 font-sans selection:bg-blue-500/30 flex flex-col h-screen p-2 lg:p-4">
@@ -73,7 +88,7 @@
                 <h1 class="text-3xl font-black tracking-tighter text-white uppercase italic">
                     NOVA <span class="text-blue-500 not-italic">GATEWAY</span>
                 </h1>
-                <p class="text-xs font-mono text-slate-500 mt-1">Mass CC Checker // Auto-Fix // VBV</p>
+                <p class="text-xs font-mono text-slate-500 mt-1">Mass CC Checker // Auto-Format // VBV</p>
             </div>
             <div class="flex items-center gap-4">
                 <div class="text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1 rounded border border-slate-800 flex items-center gap-2">
@@ -100,10 +115,7 @@
                     
                     <textarea id="inputData" 
                         class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none text-slate-300 flex-1"
-                        placeholder="444444xxxxxxxxxx|12|2025|123
-444444xxxxxxxxxx 12 2025 123
-4444 4444 4444 4444 | 12 | 2025 | 123
-444444xxxxxxxxxx|12|25|123"></textarea>
+                        placeholder="Paste cards here (mixed formats supported)&#10;e.g. 444444|12|2025|123"></textarea>
                     
                     <div class="flex justify-between items-center mt-3 shrink-0">
                         <button onclick="clearInput()" class="text-xs text-slate-500 hover:text-slate-300 transition"><i class="fa-solid fa-trash"></i> Clear</button>
@@ -116,10 +128,10 @@
                             <i class="fa-solid fa-bolt"></i> START MASS CHECK
                         </button>
                         
-                        <div class="flex gap-2">
-                            <button onclick="copyColumn('pipes')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-xs py-2 rounded border border-slate-700 transition"><i class="fa-solid fa-copy"></i> Copy Pipes</button>
-                            <button onclick="copyColumn('status')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-xs py-2 rounded border border-slate-700 transition"><i class="fa-solid fa-copy"></i> Copy Status</button>
-                            <button onclick="copyColumn('full')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-xs py-2 rounded border border-slate-700 transition"><i class="fa-solid fa-copy"></i> Copy All Rows</button>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="copyColumn('pipes')" class="bg-slate-800 hover:bg-slate-700 text-xs py-2 rounded border border-slate-700 transition"><i class="fa-solid fa-copy"></i> All Pipes</button>
+                            <button onclick="copyColumn('lives')" class="bg-emerald-900/30 hover:bg-emerald-900/50 text-emerald-400 border border-emerald-900/50 text-xs py-2 rounded transition"><i class="fa-solid fa-check"></i> Live Only</button>
+                            <button onclick="copyColumn('full')" class="col-span-2 bg-slate-800 hover:bg-slate-700 text-xs py-2 rounded border border-slate-700 transition"><i class="fa-solid fa-table"></i> Full Report (CSV)</button>
                         </div>
                     </div>
                 </div>
@@ -128,32 +140,17 @@
             <!-- Output/Console Section -->
             <div class="lg:col-span-8 flex flex-col h-full">
                 <div class="glass p-0 rounded-xl shadow-2xl relative overflow-hidden flex flex-col h-full">
-                    <!-- Console Header -->
-                    <div class="bg-slate-900/80 p-3 border-b border-slate-800 flex justify-between items-center shrink-0">
-                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                            <i class="fa-solid fa-table"></i> Results
-                        </h2>
-                        <div class="flex gap-2">
-                             <button onclick="exportCSV()" class="text-xs bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded border border-slate-700 transition">
-                                <i class="fa-solid fa-download"></i> CSV
-                            </button>
-                            <button onclick="clearResults()" class="text-xs bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded border border-slate-700 transition">
-                                <i class="fa-solid fa-trash"></i> Clear
-                            </button>
-                        </div>
-                    </div>
-
                     <!-- Table -->
                     <div class="table-container">
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="text-xs font-bold text-slate-500 uppercase">
-                                    <th class="p-3 border-b border-slate-800 w-16">#</th>
+                                    <th class="p-3 border-b border-slate-800 w-12">#</th>
                                     <th class="p-3 border-b border-slate-800">Raw Input</th>
-                                    <th class="p-3 border-b border-slate-800">Pipe Format</th>
+                                    <th class="p-3 border-b border-slate-800">Normalized Pipe</th>
                                     <th class="p-3 border-b border-slate-800 w-24">Status</th>
                                     <th class="p-3 border-b border-slate-800">Details</th>
-                                    <th class="p-3 border-b border-slate-800 w-32 text-center">Actions</th>
+                                    <th class="p-3 border-b border-slate-800 w-24 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="resultsBody" class="text-sm font-mono">
@@ -167,180 +164,216 @@
         </div>
     </div>
 
+    <!-- Toast Notification -->
+    <div id="toast">Copied to clipboard!</div>
+
     <script>
+        // Default data provided by user
+        const defaultInput = `4867863024656733|12|2031|907
+4867861500170955|06|2031|307
+4867862080626804|09|2031|301
+4867867949267872|08|2031|866
+4867867761065321|01|2031|842
+4867860341367903|02|2027|386
+4867868777635933|10|2027|743
+4867869821298892|04|2030|418
+4867865744958711|07|2031|908
+4867864947031053|02|2028|741
+4867862133200128|08|2028|369
+4867864266142358|01|2029|817
+4867863069075161|07|2030|939
+4867862012302292|11|2029|564
+4867864668166864|11|2027|821
+4867869853197129|11|2030|172
+4867864290734717|11|2031|801
+4867864897435338|11|2027|725
+4867864563187817|07|2028|725
+4867864495196928|03|2028|193
+4867867845953559|02|2028|790
+4867860451259536|12|2027|477
+4867864919996796|04|2031|772
+4867867930296252|11|2027|425
+4867862689432307|09|2029|476
+4867866163001033|11|2029|895
+4867866556861803|06|2030|257
+4867865455076935|10|2030|445
+4867869685383566|12|2030|631
+4867868294271055|07|2028|889
+4867862181876308|03|2031|736
+4867865409742954|12|2028|299
+4867864560365390|04|2028|261
+4867868931831493|08|2028|255
+4867869541666550|11|2027|852
+4867862205733576|12|2030|568
+4867865257995167|09|2030|651
+4867860825653711|10|2029|593
+4867864009785265|01|2031|589
+4867864092133670|10|2027|349
+4031631179624769|05|31|475`;
+
         // Global State
         let results = [];
         let isProcessing = false;
 
-        // Utility: Normalize Card Input
-        function normalizeCard(line) {
-            // Remove all non-digit characters except spaces and pipes
-            let cleaned = line.replace(/[^\d|\s]/g, '').trim();
-            
-            // Split by space, pipe, or slash
-            let parts = cleaned.split(/[\s|\/]+/);
-            
-            // Filter out empty strings
-            parts = parts.filter(p => p.length > 0);
+        // Initialize with default data
+        document.getElementById('inputData').value = defaultInput;
+        updateCardCount();
 
-            // If we have parts, try to reconstruct standard pipe format
-            if (parts.length === 0) return null;
-
-            let pan = '';
-            let month = '';
-            let year = '';
-            let cvv = '';
-
-            // Logic to parse the parts
-            // Heuristic: 
-            // 1. Find the longest sequence of digits (PAN)
-            // 2. Next parts are likely MM, YY, CVV
+        // Utility: Parse Card
+        function parseCard(line) {
+            // 1. Clean input: remove spaces, slashes, dashes
+            let clean = line.replace(/[\s|\/\-]+/g, '');
             
-            // Re-join all digits to find PAN
-            const allDigits = cleaned.replace(/\s/g, '').replace(/|/g, '');
-            
-            // Extract PAN: Usually first 13-19 digits
-            // We look for sequences of digits in the original line to preserve pan
-            const digitMatches = cleaned.match(/\d+/g);
-            if (!digitMatches || digitMatches.length < 4) return null;
+            // 2. Split by digits sequence
+            let parts = clean.match(/\d+/g);
+            if (!parts) return null;
 
-            pan = digitMatches[0];
-            
-            // Validate PAN length (13-19)
-            if (pan.length < 13 || pan.length > 19) return null;
+            // 3. Identify PAN (first long sequence)
+            // Assuming PAN is the first part with >10 digits
+            let panIndex = parts.findIndex(p => p.length > 10);
+            if (panIndex === -1) panIndex = 0; // Fallback
 
-            // Determine Month, Year, CVV from remaining parts
-            const remainingParts = digitMatches.slice(1);
-            
-            // If we have remaining parts, assign them
-            if (remainingParts.length >= 1) month = remainingParts[0];
-            if (remainingParts.length >= 2) year = remainingParts[1];
-            if (remainingParts.length >= 3) cvv = remainingParts[2];
+            let pan = parts[panIndex];
+            let remaining = [...parts.slice(0, panIndex), ...parts.slice(panIndex + 1)];
 
-            // Fix Year: If 2 digits, assume 2000s if < 26, else 1900s (common heuristic)
-            if (year && year.length === 2) {
-                year = parseInt(year) < 26 ? '20' + year : '19' + year;
+            // 4. Parse Date (MM, YY) and CVV
+            let month = "";
+            let year = "";
+            let cvv = "";
+
+            // Helper to find a valid MM in remaining parts
+            let mmIdx = remaining.findIndex(p => p.length === 2 && parseInt(p) >= 1 && parseInt(p) <= 12);
+            if (mmIdx !== -1) {
+                month = remaining[mmIdx];
+                remaining.splice(mmIdx, 1);
             }
 
-            // If Month is 3 digits, it might be Year (e.g. 123 split into 12 and 3)
-            if (month && month.length > 2) {
-                year = month;
-                if (remainingParts.length >= 2) month = remainingParts[0];
-                if (remainingParts.length >= 2) cvv = remainingParts[1];
+            // Helper to find a valid YY (2 digits) or YYYY (4 digits)
+            // Priority: Look for 4-digit first, then 2-digit
+            let yyIdx = remaining.findIndex(p => p.length === 4 && parseInt(p) > 2000);
+            if (yyIdx === -1) {
+                yyIdx = remaining.findIndex(p => p.length === 2 && parseInt(p) < 100);
+            }
+            
+            if (yyIdx !== -1) {
+                let rawYear = remaining[yyIdx];
+                if (rawYear.length === 2) {
+                    year = (parseInt(rawYear) < 50) ? "20" + rawYear : "19" + rawYear;
+                } else {
+                    year = rawYear;
+                }
+                remaining.splice(yyIdx, 1);
             }
 
-            // Ensure CVV is 3 or 4 digits
-            if (cvv && cvv.length > 4) cvv = cvv.substring(0, 4);
+            // CVV is the last remaining part
+            if (remaining.length > 0) {
+                cvv = remaining[remaining.length - 1];
+                if (cvv.length > 4) cvv = cvv.substring(0, 4);
+            }
 
-            // Final Format: PAN|MM|YY|CVV
-            return `${pan}|${month.padStart(2, '0')}||${year}|${cvv}`;
+            // Reconstruct normalized pipe
+            let normalized = `${pan}|${month.padStart(2, '0')}||${year}|${cvv}`;
+            
+            // Basic Validation: Does it look like a card?
+            if (!month || !year) return { raw: line, pipe: normalized, valid: false };
+            return { raw: line, pipe: normalized, valid: true };
         }
 
         function clearInput() {
             document.getElementById('inputData').value = '';
-            document.getElementById('card-count').innerText = '0 cards loaded';
+            updateCardCount();
         }
 
-        function clearResults() {
-            document.getElementById('resultsBody').innerHTML = '';
-            results = [];
-            updateCounts();
+        function updateCardCount() {
+            const input = document.getElementById('inputData').value.trim();
+            const count = input ? input.split(/\n/).filter(l => l.trim()).length : 0;
+            document.getElementById('card-count').innerText = `${count} cards loaded`;
         }
 
-        function updateCounts() {
-            let live = 0;
-            let dead = 0;
-            let vbv = 0;
-
-            results.forEach(r => {
-                if (r.status === 'LIVE') live++;
-                else if (r.status === 'VBV') vbv++;
-                else dead++;
-            });
-
-            document.getElementById('count-live').innerText = live;
-            document.getElementById('count-dead').innerText = dead;
-            document.getElementById('count-vbv').innerText = vbv;
-            document.getElementById('count-total').innerText = results.length;
-        }
+        // Listen for input changes to update count
+        document.getElementById('inputData').addEventListener('input', updateCardCount);
 
         async function startMassCheck() {
             if (isProcessing) return;
             
             const input = document.getElementById('inputData').value.trim();
             if (!input) {
-                log('No cards to check.', 'log-err');
+                showToast("No cards to check!", false);
                 return;
             }
 
             const lines = input.split(/\n/).filter(l => l.trim().length > 0);
-            const normalizedCards = lines.map(line => ({
-                raw: line.trim(),
-                pipe: normalizeCard(line)
-            })).filter(c => c.pipe !== null);
+            
+            // Parse all lines first
+            const parsedCards = lines.map((line, idx) => {
+                const p = parseCard(line);
+                return {
+                    id: idx + 1,
+                    raw: line.trim(),
+                    parsed: p
+                };
+            });
 
-            if (normalizedCards.length === 0) {
-                log('No valid cards found in input.', 'log-err');
+            if (parsedCards.length === 0) {
+                showToast("No valid data found.", false);
                 return;
             }
 
-            log(`Loaded ${normalizedCards.length} cards.`, 'log-info');
-            document.getElementById('card-count').innerText = `${normalizedCards.length} cards loaded`;
+            log(`Parsed ${parsedCards.length} cards. Starting check...`, 'log-info');
             
             isProcessing = true;
             document.getElementById('startBtn').disabled = true;
-            document.getElementById('startBtn').classList.add('opacity-50');
+            document.getElementById('startBtn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
             document.getElementById('status-text').innerText = "PROCESSING";
             document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-blue-500 live-status";
 
-            results = []; // Reset results for new batch
+            results = []; 
             document.getElementById('resultsBody').innerHTML = '';
 
-            // Process in batches to avoid UI freeze
-            const batchSize = 10;
-            for (let i = 0; i < normalizedCards.length; i += batchSize) {
-                const batch = normalizedCards.slice(i, i + batchSize);
-                await processBatch(batch, i);
+            // Process in batches
+            const batchSize = 5; // Smaller batch for smoother UI with many cards
+            for (let i = 0; i < parsedCards.length; i += batchSize) {
+                const batch = parsedCards.slice(i, i + batchSize);
+                await processBatch(batch);
             }
 
             finishProcessing();
         }
 
-        async function processBatch(batch, startIndex) {
-            for (let card of batch) {
-                await checkSingleCard(card, startIndex++);
-                // Small delay to simulate network and allow UI update
-                await new Promise(r => setTimeout(r, 50)); 
+        async function processBatch(batch) {
+            for (let cardObj of batch) {
+                await checkSingleCard(cardObj);
+                await new Promise(r => setTimeout(r, 20)); // Tiny delay for UI
             }
         }
 
-        async function checkSingleCard(card, index) {
-            // Simulate API Call
-            await new Promise(r => setTimeout(r, Math.random() * 300 + 100)); // 100-400ms delay
+        async function checkSingleCard(cardObj) {
+            // Simulate API Call (Randomize for demo)
+            await new Promise(r => setTimeout(r, Math.random() * 50 + 50)); 
 
             // Randomize Results for Demo
             const rand = Math.random();
             let status, message, vbvCheck;
 
-            if (rand < 0.3) {
+            if (rand < 0.35) {
                 status = 'LIVE';
                 message = 'Approved';
-                vbvCheck = Math.random() > 0.5 ? 'No' : 'Yes';
-            } else if (rand < 0.5) {
+                vbvCheck = Math.random() > 0.4 ? 'No' : 'Yes';
+            } else if (rand < 0.55) {
                 status = 'VBV';
                 message = 'VBV Required';
                 vbvCheck = 'Yes';
             } else {
                 status = 'DEAD';
-                const errors = ['Insufficient Funds', 'Do Not Honor', 'Invalid Account', 'Lost Card', 'Stolen Card'];
+                const errors = ['Insufficient Funds', 'Do Not Honor', 'Invalid Account', 'Lost Card', 'Stolen Card', 'Processing Error'];
                 message = errors[Math.floor(Math.random() * errors.length)];
                 vbvCheck = 'N/A';
             }
 
             const result = {
-                index: index + 1,
-                raw: card.raw,
-                pipe: card.pipe,
+                id: cardObj.id,
+                raw: cardObj.raw,
+                pipe: cardObj.parsed.pipe,
                 status: status,
                 message: message,
                 vbv: vbvCheck
@@ -354,31 +387,31 @@
         function addResultToTable(result) {
             const tbody = document.getElementById('resultsBody');
             const tr = document.createElement('tr');
-            tr.className = 'border-b border-slate-800 hover:bg-slate-800/30 transition';
+            tr.className = 'border-b border-slate-800 hover:bg-slate-800/30 transition animate-fade-in';
             
             let statusClass = '';
             let statusIcon = '';
             if (result.status === 'LIVE') {
-                statusClass = 'text-emerald-400 bg-emerald-900/20';
+                statusClass = 'text-emerald-400 bg-emerald-900/20 border-emerald-900/50';
                 statusIcon = '<i class="fa-solid fa-check"></i>';
             } else if (result.status === 'VBV') {
-                statusClass = 'text-blue-400 bg-blue-900/20';
+                statusClass = 'text-blue-400 bg-blue-900/20 border-blue-900/50';
                 statusIcon = '<i class="fa-solid fa-shield-halved"></i>';
             } else {
-                statusClass = 'text-red-400 bg-red-900/20';
+                statusClass = 'text-red-400 bg-red-900/20 border-red-900/50';
                 statusIcon = '<i class="fa-solid fa-xmark"></i>';
             }
 
             tr.innerHTML = `
-                <td class="p-3 text-slate-500">${result.index}</td>
+                <td class="p-3 text-slate-500">${result.id}</td>
                 <td class="p-3 text-slate-400 truncate max-w-xs" title="${result.raw}">${result.raw}</td>
                 <td class="p-3 text-slate-200 font-mono break-all">${result.pipe}</td>
                 <td class="p-3">
-                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold ${statusClass}">
+                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold border ${statusClass}">
                         ${statusIcon} ${result.status}
                     </span>
                 </td>
-                <td class="p-3 text-slate-400">${result.message} ${result.vbv !== 'N/A' ? `| VBV: ${result.vbv}` : ''}</td>
+                <td class="p-3 text-slate-400">${result.message} ${result.vbv !== 'N/A' ? `<span class="text-blue-400 text-xs">(${result.vbv})</span>` : ''}</td>
                 <td class="p-3 flex justify-center gap-2">
                     <button onclick="copyText('${escapeHtml(result.pipe)}')" class="btn-copy bg-slate-700 hover:bg-slate-600 text-slate-200" title="Copy Pipe">
                         <i class="fa-solid fa-copy"></i>
@@ -390,7 +423,7 @@
             `;
             tbody.appendChild(tr);
             
-            // Auto scroll to bottom if it's the last batch or if user is near bottom
+            // Auto scroll
             const tableContainer = document.querySelector('.table-container');
             if (tableContainer.scrollHeight - tableContainer.scrollTop - tableContainer.clientHeight < 100) {
                 tableContainer.scrollTop = tableContainer.scrollHeight;
@@ -400,16 +433,16 @@
         function finishProcessing() {
             isProcessing = false;
             document.getElementById('startBtn').disabled = false;
-            document.getElementById('startBtn').classList.remove('opacity-50');
+            document.getElementById('startBtn').innerHTML = '<i class="fa-solid fa-bolt"></i> START MASS CHECK';
             document.getElementById('status-text').innerText = "DONE";
             document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-emerald-500 live-status";
-            log(`Processing complete. ${results.length} cards checked.`, 'log-info');
+            showToast(`Done! ${results.length} cards checked.`, true);
         }
 
         // Copy Functions
         function copyText(text) {
             navigator.clipboard.writeText(text).then(() => {
-                // Visual feedback could be added here
+                showToast("Copied to clipboard!", true);
             }).catch(err => {
                 console.error('Failed to copy: ', err);
             });
@@ -419,40 +452,34 @@
             let text = '';
             if (type === 'pipes') {
                 text = results.map(r => r.pipe).join('\n');
-            } else if (type === 'status') {
-                text = results.map(r => `${r.pipe}|${r.status}|${r.message}`).join('\n');
+            } else if (type === 'lives') {
+                const lives = results.filter(r => r.status === 'LIVE');
+                if (lives.length === 0) {
+                    showToast("No live cards found!", false);
+                    return;
+                }
+                text = lives.map(r => r.pipe).join('\n');
             } else if (type === 'full') {
-                text = results.map(r => `${r.raw}|${r.pipe}|${r.status}|${r.message}|VBV:${r.vbv}`).join('\n');
+                text = results.map(r => `${r.id},${r.raw},${r.pipe},${r.status},${r.message},VBV:${r.vbv}`).join('\n');
             }
-            navigator.clipboard.writeText(text);
-            log(`Copied ${type} to clipboard.`, 'log-info');
+            
+            if (text) {
+                navigator.clipboard.writeText(text);
+                showToast(`Copied ${type === 'lives' ? lives.length : results.length} items!`, true);
+            }
         }
 
-        function exportCSV() {
-            if (results.length === 0) return;
-            const headers = ['Index', 'Raw', 'Pipe', 'Status', 'Message', 'VBV'];
-            const csvContent = [
-                headers.join(','),
-                ...results.map(r => [
-                    r.index,
-                    `"${r.raw.replace(/"/g, '""')}"`,
-                    `"${r.pipe.replace(/"/g, '""')}"`,
-                    r.status,
-                    `"${r.message.replace(/"/g, '""')}"`,
-                    r.vbv
-                ].join(','))
-            ].join('\n');
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `nova_gw_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.csv`;
-            link.click();
-            log('CSV exported.', 'log-info');
+        function showToast(message, success) {
+            const x = document.getElementById("toast");
+            x.innerText = message;
+            x.className = success ? "show" : "show";
+            if (!success) x.style.backgroundColor = "#ef4444";
+            else x.style.backgroundColor = "#10b981";
+            
+            setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
         }
 
         function log(message, className) {
-            // Optional: Add to a hidden console if needed, but table is the main output
             console.log(`[${new Date().toLocaleTimeString()}] ${message}`);
         }
 
@@ -462,3 +489,4 @@
     </script>
 </body>
 </html>
+
