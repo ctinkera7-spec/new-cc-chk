@@ -4,16 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NOVA GATEWAY - Full Screen</title>
+    <title>NOVA GATEWAY - Stripe Elements</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Stripe.js -->
     <script src="https://js.stripe.com/v3/"></script>
     <style>
         body { 
             background-color: #020617; 
             height: 100vh; 
             overflow: hidden; 
-            /* Prevents bounce on mobile */
             overscroll-behavior: none; 
         }
         .glass { 
@@ -36,20 +36,35 @@
         .log-err { color: #fbbf24; }
         .log-invalid { color: #94a3b8; }
 
-        /* Mobile Console Improvements */
         .console-container {
-            min-height: 150px; /* Increased minimum height */
-            max-height: 250px; /* Limits height on large screens */
+            min-height: 150px;
+            max-height: 250px;
             overflow-y: auto;
             scroll-behavior: smooth;
         }
         
-        /* Ensure buttons are touch-friendly */
         .touch-btn {
             min-height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        /* Stripe Element Styling */
+        .StripeElement {
+            background-color: #0f172a;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            font-family: sans-serif;
+        }
+        .StripeElement--focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 1px #3b82f6;
+        }
+        .StripeElement--invalid {
+            border-color: #ef4444;
         }
     </style>
 </head>
@@ -62,7 +77,7 @@
                 <h1 class="text-2xl lg:text-3xl font-black tracking-tighter text-white uppercase italic">
                     NOVA <span class="text-blue-500 not-italic">GATEWAY</span>
                 </h1>
-                <p class="text-xs font-mono text-slate-500 mt-1">Secure Terminal // Charge v3.1</p>
+                <p class="text-xs font-mono text-slate-500 mt-1">Secure Terminal // Charge v3.2</p>
             </div>
             <div class="flex items-center gap-2 text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1 rounded border border-slate-800">
                 <span id="status-dot" class="w-2 h-2 rounded-full bg-slate-600"></span>
@@ -76,31 +91,33 @@
             <div class="lg:col-span-3 flex flex-col gap-4 h-full">
                 <div class="glass p-4 rounded-xl shadow-2xl relative overflow-hidden flex flex-col h-full">
                     <h2 class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-2 flex items-center gap-2 shrink-0">
-                        <i class="fa-solid fa-credit-card"></i> Input
+                        <i class="fa-solid fa-credit-card"></i> Card Details
                     </h2>
                     
-                    <textarea id="inputData" 
-                        class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none text-slate-300 flex-1"
-                        placeholder="444444xxxxxxxxxx|12|2025|123&#10;..."></textarea>
-                    
-                    <div class="flex justify-between items-center mt-3 shrink-0">
+                    <!-- Stripe Elements Container -->
+                    <div id="card-element" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-1 mb-3 flex-1 min-h-[50px]">
+                        <!-- Stripe Element will be mounted here -->
+                    </div>
+                    <div id="card-errors" class="text-red-500 text-xs h-4 mb-2" role="alert"></div>
+
+                    <div class="flex justify-between items-center mt-1 shrink-0">
                         <button onclick="clearInput()" class="text-xs text-slate-500 hover:text-slate-300 transition flex items-center gap-1"><i class="fa-solid fa-trash"></i> Clear</button>
                     </div>
 
                     <!-- Phase 1 Controls -->
                     <div class="mt-3 flex flex-col gap-3 shrink-0">
                         <button onclick="startCheck()" id="startBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-lg text-sm font-bold shadow-lg shadow-blue-900/50 transition touch-btn flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-bolt"></i> VERIFY & LUHN
+                            <i class="fa-solid fa-bolt"></i> VALIDATE
                         </button>
                         
                         <div class="flex items-center gap-2">
                             <label class="text-xs text-slate-400 font-mono w-12">AMOUNT</label>
-                            <input type="number" value="1.00" step="0.01" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm text-slate-200 text-right focus:border-blue-500 outline-none">
+                            <input type="number" id="amountInput" value="1.00" step="0.01" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm text-slate-200 text-right focus:border-blue-500 outline-none">
                             <span class="text-slate-500 text-sm">USD</span>
                         </div>
 
                         <button onclick="chargeSim()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-3 rounded-lg text-sm font-bold shadow-lg shadow-emerald-900/50 transition touch-btn flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-zap"></i> CHARGE (SIM)
+                            <i class="fa-solid fa-zap"></i> CHARGE
                         </button>
                     </div>
                 </div>
@@ -121,14 +138,12 @@
                         </div>
                     </div>
 
-                    <!-- Console Body (Scrollable) -->
+                    <!-- Console Body -->
                     <div id="consoleOutput" class="console-container p-3 font-mono bg-slate-950/50 flex-1 overflow-y-auto">
-                        <div class="log-entry text-slate-500">> System initialized. Ready.</div>
-                        <div class="log-entry text-slate-500">> Waiting for input...</div>
-                        <!-- Logs will be injected here -->
+                        <div class="log-entry text-slate-500">> System initialized.</div>
+                        <div class="log-entry text-slate-500">> Stripe Elements loaded.</div>
                     </div>
                     
-                    <!-- Clear Console Button (Bottom Right) -->
                     <div class="absolute bottom-4 right-4">
                         <button onclick="clearConsole()" class="bg-slate-800 hover:bg-slate-700 text-slate-400 p-2 rounded-full shadow-lg transition">
                             <i class="fa-solid fa-rotate-left"></i>
@@ -141,49 +156,102 @@
     </div>
 
     <script>
-        // Mock functions to make the UI functional for demonstration
+        // 1. Initialize Stripe
+        // Note: Use your actual Publishable Key here. Using pk_test_... for demo.
+        const stripe = Stripe('pk_test_TYooMQauvdEDq54NiTphI7jx'); 
+        const elements = stripe.elements();
+
+        // 2. Create an instance of the card Element
+        const cardElement = elements.create('card', {
+            style: {
+                base: {
+                    color: '#e2e8f0',
+                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                    fontSmoothing: 'antialiased',
+                    fontSize: '14px',
+                    '::placeholder': {
+                        color: '#64748b',
+                    },
+                },
+                invalid: {
+                    color: '#f87171',
+                },
+            }
+        });
+
+        // 3. Mount the Element to the div
+        cardElement.mount('#card-element');
+
+        // 4. Handle real-time validation errors
+        cardElement.on('change', function(event) {
+            const displayError = document.getElementById('card-errors');
+            if (event.error) {
+                displayError.textContent = event.error.message;
+            } else {
+                displayError.textContent = '';
+            }
+        });
+
+        // UI Logic Functions
         function clearInput() {
-            document.getElementById('inputData').value = '';
-            log('Cleared input.', 'log-invalid');
+            cardElement.clear();
+            log('Cleared card details.', 'log-invalid');
         }
 
         function startCheck() {
-            const input = document.getElementById('inputData').value;
-            if(!input) {
-                log('Input empty.', 'log-invalid');
-                return;
-            }
-            log('Starting LUHN check...', 'log-live');
-            // Simulate processing
+            // Validate before proceeding
+            const { error, token } = stripe.cardNumber ? "pending" : ""; 
+            log('Validating card via Stripe Elements...', 'log-live');
+            
+            // Simulate a quick validation check
             setTimeout(() => {
-                log('LUHN Valid: 444444xxxxxxxxxx', 'log-live');
-                document.getElementById('count-live').innerText = "1";
-                document.getElementById('status-text').innerText = "PROCESSING";
-                document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-emerald-500 live-status";
+                // In a real app, you would use stripe.createToken(cardElement) here
+                log('Card format valid.', 'log-live');
+                document.getElementById('status-text').innerText = "READY";
+                document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-blue-500 live-status";
             }, 500);
         }
 
-        function chargeSim() {
-            log('Simulating charge...', 'log-err');
-            setTimeout(() => {
-                log('Charge Approved: $1.00', 'log-live');
-                document.getElementById('count-live').innerText = parseInt(document.getElementById('count-live').innerText) + 1;
-            }, 800);
+        async function chargeSim() {
+            const amount = document.getElementById('amountInput').value;
+            log(`Charging $${amount}...`, 'log-err');
+            
+            try {
+                // In a real app, you would do:
+                // const { token, error } = await stripe.createToken(cardElement);
+                // if (error) { ... }
+                // const response = await fetch('/charge', { method: 'POST', body: JSON.stringify({ token, amount }) });
+                
+                // Simulating success
+                await new Promise(r => setTimeout(r, 1000));
+                
+                const success = Math.random() > 0.3; // 70% chance of success for demo
+                
+                if (success) {
+                    log(`Approved: $${amount}`, 'log-live');
+                    document.getElementById('count-live').innerText = parseInt(document.getElementById('count-live').innerText) + 1;
+                    document.getElementById('status-text').innerText = "APPROVED";
+                    document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-emerald-500 live-status";
+                } else {
+                    log(`Declined: $${amount}`, 'log-dead');
+                    document.getElementById('count-dead').innerText = parseInt(document.getElementById('count-dead').innerText) + 1;
+                    document.getElementById('status-text').innerText = "DECLINED";
+                    document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-red-500 dead-status";
+                }
+            } catch (e) {
+                log(`Error: ${e.message}`, 'log-err');
+            }
         }
 
         function log(message, className) {
             const consoleDiv = document.getElementById('consoleOutput');
             const entry = document.createElement('div');
             entry.className = `log-entry ${className}`;
-            
-            // Add timestamp
             const time = new Date().toLocaleTimeString('en-US', { hour12: false });
             entry.innerHTML = `<span class="text-slate-600">[${time}]</span> ${message}`;
-            
             consoleDiv.appendChild(entry);
             consoleDiv.scrollTop = consoleDiv.scrollHeight;
             
-            // Update total
             const currentTotal = document.getElementById('count-total').innerText;
             document.getElementById('count-total').innerText = parseInt(currentTotal) + 1;
         }
