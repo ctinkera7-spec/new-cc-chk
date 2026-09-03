@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #020617; }
+        .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); }
+        .neo-border-live { border: 1px solid rgba(16, 185, 129, 0.2); box-shadow: 0 0 15px rgba(16, 185, 129, 0.05); }
+        .neo-border-dead { border: 1px solid rgba(239, 68, 68, 0.2); box-shadow: 0 0 15px rgba(239, 68, 68, 0.05); }
+        .neo-border-unknown { border: 1px solid rgba(148, 163, 184, 0.2); }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    </style>
+</head>
+<body class="text-slate-200 font-sans selection:bg-blue-500/30">
+
+<div class="max-w-7xl mx-auto p-6 min-h-screen">
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+        <div class="text-center md:text-left">
+            <h1 class="text-4xl font-black tracking-tighter text-white uppercase italic">
+                NOVA <span class="text-blue-500 not-italic">GATEWAY</span>
+            </h1>
+            <p class="text-[10px] font-mono text-slate-500 uppercase tracking-[0.3em] mt-1">Multi-Threaded Processor v2.5 // Secure Terminal</p>
+        </div>
+        <div class="flex items-center gap-3 bg-slate-900/80 px-4 py-2 rounded-full border border-slate-800">
+            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">System Operational</span>
+        </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Sidebar Controls -->
+        <div class="lg:col-span-3 space-y-6">
+            <div class="glass p-6 rounded-3xl border border-slate-800 shadow-2xl">
+                <h2 class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-6">Configuration</h2>
+                
+                <div class="space-y-5">
+                    <div class="group">
+                        <label class="block text-[9px] text-slate-500 mb-2 uppercase font-bold tracking-tighter">Gateway Secret Key</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-key absolute left-3 top-3 text-slate-600 text-xs"></i>
+                            <input type="password" id="sk_key" value="sk_test_51UBd5SE1Kfp34QFsdUyglKsisRBKnsr3iMQHpMV5Ogc59EWslHU206TofS131S6sj4snOELai5aIW7mqVRLSB80T00zoqnHRmg" 
+                                class="w-full bg-slate-950 border border-slate-800 p-2.5 pl-9 rounded-xl text-xs font-mono focus:border-blue-500 transition-all outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[9px] text-slate-500 mb-2 uppercase font-bold tracking-tighter">Charge Intensity (USD)</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-dollar-sign absolute left-3 top-3 text-slate-600 text-xs"></i>
+                            <input type="number" id="charge_amt" value="1.00" 
+                                class="w-full bg-slate-950 border border-slate-800 p-2.5 pl-9 rounded-xl text-xs font-mono focus:border-emerald-500 transition-all outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 space-y-3">
+                    <button onclick="startProcessing()" id="btn-start" class="w-full bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-lg shadow-blue-900/20 transition-all active:scale-95">
+                        <i class="fa-solid fa-bolt-lightning mr-2"></i> Execute
+                    </button>
+                    <button onclick="stopProcessing()" class="w-full bg-slate-800/50 hover:bg-red-900/20 py-3 rounded-2xl text-[10px] font-bold text-slate-500 hover:text-red-400 border border-transparent hover:border-red-900/50 transition-all">
+                        Terminate Session
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mini Stats -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-slate-900/40 p-4 rounded-2xl border border-slate-800 text-center">
+                    <div id="count-live" class="text-xl font-black text-emerald-400">0</div>
+                    <div class="text-[8px] text-slate-500 uppercase font-bold">Success</div>
+                </div>
+                <div class="bg-slate-900/40 p-4 rounded-2xl border border-slate-800 text-center">
+                    <div id="count-dead" class="text-xl font-black text-red-500">0</div>
+                    <div class="text-[8px] text-slate-500 uppercase font-bold">Failed</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Interface -->
+        <div class="lg:col-span-9 space-y-6">
+            <div class="relative group">
+                <div class="absolute -top-3 left-6 bg-slate-950 px-3 text-[9px] font-black text-blue-500 uppercase tracking-widest z-10">Data Input</div>
+                <textarea id="card_list" rows="5" placeholder="FORMAT: CC|MM|YY|CVV" 
+                    class="w-full bg-slate-900/50 border border-slate-800 p-6 pt-8 rounded-3xl focus:border-blue-500/50 font-mono text-xs outline-none transition-all shadow-inner"></textarea>
+            </div>
+
+            <!-- Triple Threat Columns -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- SUCCESS -->
+                <div class="glass neo-border-live rounded-3xl overflow-hidden flex flex-col h-[450px]">
+                    <div class="bg-emerald-500/5 p-4 border-b border-emerald-900/20 flex justify-between items-center">
+                        <span class="text-emerald-400 text-[10px] font-black uppercase tracking-widest"><i class="fa-solid fa-circle-check mr-2"></i> Live</span>
+                        <div class="px-2 py-0.5 bg-emerald-500/20 rounded text-[9px] text-emerald-400 font-mono" id="stat-live">0%</div>
+                    </div>
+                    <div id="list-live" class="p-4 space-y-3 overflow-y-auto font-mono text-[10px]"></div>
+                </div>
+
+                <!-- DECLINED -->
+                <div class="glass neo-border-dead rounded-3xl overflow-hidden flex flex-col h-[450px]">
+                    <div class="bg-red-500/5 p-4 border-b border-red-900/20 flex justify-between items-center">
+                        <span class="text-red-400 text-[10px] font-black uppercase tracking-widest"><i class="fa-solid fa-circle-xmark mr-2"></i> Dead</span>
+                        <div class="px-2 py-0.5 bg-red-500/20 rounded text-[9px] text-red-400 font-mono" id="stat-dead">0%</div>
+                    </div>
+                    <div id="list-dead" class="p-4 space-y-3 overflow-y-auto font-mono text-[10px]"></div>
+                </div>
+
+                <!-- LOGS -->
+                <div class="glass neo-border-unknown rounded-3xl overflow-hidden flex flex-col h-[450px]">
+                    <div class="bg-slate-800/20 p-4 border-b border-slate-800 flex justify-between items-center">
+                        <span class="text-slate-400 text-[10px] font-black uppercase tracking-widest"><i class="fa-solid fa-terminal mr-2"></i> Console</span>
+                        <span class="text-[9px] text-slate-600 font-mono" id="progress-text">IDLE</span>
+                    </div>
+                    <div id="list-unknown" class="p-4 space-y-3 overflow-y-auto font-mono text-[9px] text-slate-500 italic"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let isRunning = false;
+    const PK = 'pk_test_51UBd5SE1Kfp34QFs7MYwyvG6fVhKnCKaUGw3E3VEXUiptuKIG8ulxOSrSZHIyEWM0d2vcWgl1x0JkCNeneYFyaqa00ZJ4y1nje';
+
+    async function startProcessing() {
+        const sk = document.getElementById('sk_key').value;
+        const amount = document.getElementById('charge_amt').value;
+        const list = document.getElementById('card_list').value.trim().split('\n').filter(l => l.includes('|'));
+        
+        if (!list.length) return alert("NO DATA DETECTED");
+
+        isRunning = true;
+        document.getElementById('btn-start').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Processing';
+        
+        for (let i = 0; i < list.length; i++) {
+            if (!isRunning) break;
+            const [cc, mm, yy, cvv] = list[i].split('|');
+            document.getElementById('progress-text').innerText = `${i+1}/${list.length}`;
+            
+            updateUI('unknown', `REQ > ${cc.substring(0,6)}...`);
+
+            try {
+                // TOKENIZE
+                const tokRes = await fetch('https://api.stripe.com/v1/tokens', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${PK}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({'card[number]': cc, 'card[exp_month]': mm, 'card[exp_year]': yy, 'card[cvc]': cvv})
+                });
+                const tokData = await tokRes.json();
+                if (!tokRes.ok) throw new Error(tokData.error.message);
+
+                // CHARGE
+                const charRes = await fetch('https://api.stripe.com/v1/charges', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${sk}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({'amount': Math.round(amount * 100), 'currency': 'usd', 'source': tokData.id})
+                });
+                const charData = await charRes.json();
+
+                if (charRes.ok) {
+                    updateUI('live', `<span class="text-white">${cc.substring(0,12)}</span> | <span class="text-emerald-400">SUCCESS</span>`);
+                } else {
+                    updateUI('dead', `${cc.substring(0,12)} | ${charData.error.code || 'DECLINED'}`);
+                }
+            } catch (e) {
+                updateUI('dead', `${cc.substring(0,12)} | ERROR`);
+            }
+            await new Promise(r => setTimeout(r, 800));
+        }
+        stopProcessing();
+    }
+
+    function updateUI(type, msg) {
+        const container = document.getElementById(`list-${type}`);
+        const countEl = document.getElementById(`count-${type}`);
+        const entry = document.createElement('div');
+        entry.className = "border-b border-slate-800/50 pb-2 animate-in fade-in slide-in-from-left-2 duration-300";
+        entry.innerHTML = msg;
+        container.prepend(entry);
+        
+        if(countEl) {
+            const newCount = parseInt(countEl.innerText) + 1;
+            countEl.innerText = newCount;
+        }
+    }
+
+    function stopProcessing() {
+        isRunning = false;
+        document.getElementById('btn-start').innerHTML = '<i class="fa-solid fa-bolt-lightning mr-2"></i> Execute';
+        document.getElementById('progress-text').innerText = "STOPPED";
+    }
+</script>
+
+</body>
+</html>
