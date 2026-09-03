@@ -3,151 +3,163 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NOVA GATEWAY - Stripe Elements</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOVA GATEWAY - Mass CC Checker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Stripe.js -->
-    <script src="https://js.stripe.com/v3/"></script>
     <style>
         body { 
             background-color: #020617; 
             height: 100vh; 
             overflow: hidden; 
-            overscroll-behavior: none; 
         }
         .glass { 
             background: rgba(15, 23, 42, 0.6); 
             backdrop-filter: blur(12px); 
             border: 1px solid rgba(51, 65, 85, 0.5); 
         }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
         
         @keyframes pulse-green { 0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } }
         @keyframes pulse-red { 0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } }
+        @keyframes pulse-blue { 0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); } }
+        
         .live-status { animation: pulse-green 2s infinite; }
         .dead-status { animation: pulse-red 2s infinite; }
-        
-        .log-entry { font-size: 0.7rem; line-height: 1.4; margin-bottom: 2px; word-break: break-all; }
+        .vbv-status { animation: pulse-blue 2s infinite; }
+
+        .log-entry { font-size: 0.75rem; margin-bottom: 2px; word-break: break-all; font-family: monospace; }
         .log-live { color: #4ade80; }
         .log-dead { color: #f87171; }
+        .log-vbv { color: #60a5fa; }
         .log-err { color: #fbbf24; }
-        .log-invalid { color: #94a3b8; }
+        .log-info { color: #94a3b8; }
 
-        .console-container {
-            min-height: 150px;
-            max-height: 250px;
+        /* Table Styling */
+        .table-container {
             overflow-y: auto;
-            scroll-behavior: smooth;
+            flex: 1;
         }
-        
-        .touch-btn {
-            min-height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #0f172a;
+            backdrop-filter: blur(4px);
         }
-
-        /* Stripe Element Styling */
-        .StripeElement {
-            background-color: #0f172a;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #334155;
-            color: #e2e8f0;
-            font-family: sans-serif;
+        tr:hover {
+            background-color: rgba(30, 41, 59, 0.5);
         }
-        .StripeElement--focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 1px #3b82f6;
+        .btn-copy {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        .StripeElement--invalid {
-            border-color: #ef4444;
+        .btn-copy:hover {
+            background-color: rgba(255,255,255,0.1);
         }
     </style>
 </head>
 <body class="text-slate-200 font-sans selection:bg-blue-500/30 flex flex-col h-screen p-2 lg:p-4">
 
-    <div class="w-full max-w-7xl flex-1 flex flex-col h-full">
+    <div class="w-full max-w-7xl flex-1 flex flex-col">
         <!-- Header -->
         <header class="flex justify-between items-center mb-4 border-b border-slate-800 pb-4 shrink-0">
             <div>
-                <h1 class="text-2xl lg:text-3xl font-black tracking-tighter text-white uppercase italic">
+                <h1 class="text-3xl font-black tracking-tighter text-white uppercase italic">
                     NOVA <span class="text-blue-500 not-italic">GATEWAY</span>
                 </h1>
-                <p class="text-xs font-mono text-slate-500 mt-1">Secure Terminal // Charge v3.2</p>
+                <p class="text-xs font-mono text-slate-500 mt-1">Mass CC Checker // Auto-Fix // VBV</p>
             </div>
-            <div class="flex items-center gap-2 text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1 rounded border border-slate-800">
-                <span id="status-dot" class="w-2 h-2 rounded-full bg-slate-600"></span>
-                <span id="status-text">IDLE</span>
+            <div class="flex items-center gap-4">
+                <div class="text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1 rounded border border-slate-800 flex items-center gap-2">
+                    <span id="status-dot" class="w-2 h-2 rounded-full bg-slate-600"></span>
+                    <span id="status-text">IDLE</span>
+                </div>
+                <div class="flex gap-2 text-xs font-mono bg-slate-900 px-3 py-1 rounded border border-slate-800">
+                    <span class="text-emerald-400">Live: <span id="count-live">0</span></span>
+                    <span class="text-red-400">Dead: <span id="count-dead">0</span></span>
+                    <span class="text-blue-400">VBV: <span id="count-vbv">0</span></span>
+                    <span class="text-slate-500">Total: <span id="count-total">0</span></span>
+                </div>
             </div>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 min-h-0">
             
-            <!-- Input Section (Left/Top) -->
-            <div class="lg:col-span-3 flex flex-col gap-4 h-full">
+            <!-- Input Section -->
+            <div class="lg:col-span-4 flex flex-col gap-4 h-full">
                 <div class="glass p-4 rounded-xl shadow-2xl relative overflow-hidden flex flex-col h-full">
                     <h2 class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-2 flex items-center gap-2 shrink-0">
-                        <i class="fa-solid fa-credit-card"></i> Card Details
+                        <i class="fa-solid fa-keyboard"></i> Input Cards
                     </h2>
                     
-                    <!-- Stripe Elements Container -->
-                    <div id="card-element" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-1 mb-3 flex-1 min-h-[50px]">
-                        <!-- Stripe Element will be mounted here -->
+                    <textarea id="inputData" 
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none text-slate-300 flex-1"
+                        placeholder="444444xxxxxxxxxx|12|2025|123
+444444xxxxxxxxxx 12 2025 123
+4444 4444 4444 4444 | 12 | 2025 | 123
+444444xxxxxxxxxx|12|25|123"></textarea>
+                    
+                    <div class="flex justify-between items-center mt-3 shrink-0">
+                        <button onclick="clearInput()" class="text-xs text-slate-500 hover:text-slate-300 transition"><i class="fa-solid fa-trash"></i> Clear</button>
+                        <span class="text-xs text-slate-500" id="card-count">0 cards loaded</span>
                     </div>
-                    <div id="card-errors" class="text-red-500 text-xs h-4 mb-2" role="alert"></div>
 
-                    <div class="flex justify-between items-center mt-1 shrink-0">
-                        <button onclick="clearInput()" class="text-xs text-slate-500 hover:text-slate-300 transition flex items-center gap-1"><i class="fa-solid fa-trash"></i> Clear</button>
-                    </div>
-
-                    <!-- Phase 1 Controls -->
+                    <!-- Controls -->
                     <div class="mt-3 flex flex-col gap-3 shrink-0">
-                        <button onclick="startCheck()" id="startBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-lg text-sm font-bold shadow-lg shadow-blue-900/50 transition touch-btn flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-bolt"></i> VALIDATE
+                        <button onclick="startMassCheck()" id="startBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-lg text-sm font-bold shadow-lg shadow-blue-900/50 transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-bolt"></i> START MASS CHECK
                         </button>
                         
-                        <div class="flex items-center gap-2">
-                            <label class="text-xs text-slate-400 font-mono w-12">AMOUNT</label>
-                            <input type="number" id="amountInput" value="1.00" step="0.01" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm text-slate-200 text-right focus:border-blue-500 outline-none">
-                            <span class="text-slate-500 text-sm">USD</span>
+                        <div class="flex gap-2">
+                            <button onclick="copyColumn('pipes')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-xs py-2 rounded border border-slate-700 transition"><i class="fa-solid fa-copy"></i> Copy Pipes</button>
+                            <button onclick="copyColumn('status')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-xs py-2 rounded border border-slate-700 transition"><i class="fa-solid fa-copy"></i> Copy Status</button>
+                            <button onclick="copyColumn('full')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-xs py-2 rounded border border-slate-700 transition"><i class="fa-solid fa-copy"></i> Copy All Rows</button>
                         </div>
-
-                        <button onclick="chargeSim()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-3 rounded-lg text-sm font-bold shadow-lg shadow-emerald-900/50 transition touch-btn flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-zap"></i> CHARGE
-                        </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Output/Console Section (Right/Bottom) -->
-            <div class="lg:col-span-9 flex flex-col h-full">
+            <!-- Output/Console Section -->
+            <div class="lg:col-span-8 flex flex-col h-full">
                 <div class="glass p-0 rounded-xl shadow-2xl relative overflow-hidden flex flex-col h-full">
                     <!-- Console Header -->
                     <div class="bg-slate-900/80 p-3 border-b border-slate-800 flex justify-between items-center shrink-0">
                         <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                            <i class="fa-solid fa-terminal"></i> CONSOLE
+                            <i class="fa-solid fa-table"></i> Results
                         </h2>
-                        <div class="flex gap-3 text-xs font-mono">
-                            <span class="text-emerald-400"><i class="fa-solid fa-check"></i> Live: <span id="count-live">0</span></span>
-                            <span class="text-red-400"><i class="fa-solid fa-xmark"></i> Dead: <span id="count-dead">0</span></span>
-                            <span class="text-slate-500">Total: <span id="count-total">0</span></span>
+                        <div class="flex gap-2">
+                             <button onclick="exportCSV()" class="text-xs bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded border border-slate-700 transition">
+                                <i class="fa-solid fa-download"></i> CSV
+                            </button>
+                            <button onclick="clearResults()" class="text-xs bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded border border-slate-700 transition">
+                                <i class="fa-solid fa-trash"></i> Clear
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Console Body -->
-                    <div id="consoleOutput" class="console-container p-3 font-mono bg-slate-950/50 flex-1 overflow-y-auto">
-                        <div class="log-entry text-slate-500">> System initialized.</div>
-                        <div class="log-entry text-slate-500">> Stripe Elements loaded.</div>
-                    </div>
-                    
-                    <div class="absolute bottom-4 right-4">
-                        <button onclick="clearConsole()" class="bg-slate-800 hover:bg-slate-700 text-slate-400 p-2 rounded-full shadow-lg transition">
-                            <i class="fa-solid fa-rotate-left"></i>
-                        </button>
+                    <!-- Table -->
+                    <div class="table-container">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-xs font-bold text-slate-500 uppercase">
+                                    <th class="p-3 border-b border-slate-800 w-16">#</th>
+                                    <th class="p-3 border-b border-slate-800">Raw Input</th>
+                                    <th class="p-3 border-b border-slate-800">Pipe Format</th>
+                                    <th class="p-3 border-b border-slate-800 w-24">Status</th>
+                                    <th class="p-3 border-b border-slate-800">Details</th>
+                                    <th class="p-3 border-b border-slate-800 w-32 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody" class="text-sm font-mono">
+                                <!-- Results will be injected here -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -156,113 +168,296 @@
     </div>
 
     <script>
-        // 1. Initialize Stripe
-        // Note: Use your actual Publishable Key here. Using pk_test_... for demo.
-        const stripe = Stripe('pk_test_TYooMQauvdEDq54NiTphI7jx'); 
-        const elements = stripe.elements();
+        // Global State
+        let results = [];
+        let isProcessing = false;
 
-        // 2. Create an instance of the card Element
-        const cardElement = elements.create('card', {
-            style: {
-                base: {
-                    color: '#e2e8f0',
-                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-                    fontSmoothing: 'antialiased',
-                    fontSize: '14px',
-                    '::placeholder': {
-                        color: '#64748b',
-                    },
-                },
-                invalid: {
-                    color: '#f87171',
-                },
+        // Utility: Normalize Card Input
+        function normalizeCard(line) {
+            // Remove all non-digit characters except spaces and pipes
+            let cleaned = line.replace(/[^\d|\s]/g, '').trim();
+            
+            // Split by space, pipe, or slash
+            let parts = cleaned.split(/[\s|\/]+/);
+            
+            // Filter out empty strings
+            parts = parts.filter(p => p.length > 0);
+
+            // If we have parts, try to reconstruct standard pipe format
+            if (parts.length === 0) return null;
+
+            let pan = '';
+            let month = '';
+            let year = '';
+            let cvv = '';
+
+            // Logic to parse the parts
+            // Heuristic: 
+            // 1. Find the longest sequence of digits (PAN)
+            // 2. Next parts are likely MM, YY, CVV
+            
+            // Re-join all digits to find PAN
+            const allDigits = cleaned.replace(/\s/g, '').replace(/|/g, '');
+            
+            // Extract PAN: Usually first 13-19 digits
+            // We look for sequences of digits in the original line to preserve pan
+            const digitMatches = cleaned.match(/\d+/g);
+            if (!digitMatches || digitMatches.length < 4) return null;
+
+            pan = digitMatches[0];
+            
+            // Validate PAN length (13-19)
+            if (pan.length < 13 || pan.length > 19) return null;
+
+            // Determine Month, Year, CVV from remaining parts
+            const remainingParts = digitMatches.slice(1);
+            
+            // If we have remaining parts, assign them
+            if (remainingParts.length >= 1) month = remainingParts[0];
+            if (remainingParts.length >= 2) year = remainingParts[1];
+            if (remainingParts.length >= 3) cvv = remainingParts[2];
+
+            // Fix Year: If 2 digits, assume 2000s if < 26, else 1900s (common heuristic)
+            if (year && year.length === 2) {
+                year = parseInt(year) < 26 ? '20' + year : '19' + year;
             }
-        });
 
-        // 3. Mount the Element to the div
-        cardElement.mount('#card-element');
-
-        // 4. Handle real-time validation errors
-        cardElement.on('change', function(event) {
-            const displayError = document.getElementById('card-errors');
-            if (event.error) {
-                displayError.textContent = event.error.message;
-            } else {
-                displayError.textContent = '';
+            // If Month is 3 digits, it might be Year (e.g. 123 split into 12 and 3)
+            if (month && month.length > 2) {
+                year = month;
+                if (remainingParts.length >= 2) month = remainingParts[0];
+                if (remainingParts.length >= 2) cvv = remainingParts[1];
             }
-        });
 
-        // UI Logic Functions
+            // Ensure CVV is 3 or 4 digits
+            if (cvv && cvv.length > 4) cvv = cvv.substring(0, 4);
+
+            // Final Format: PAN|MM|YY|CVV
+            return `${pan}|${month.padStart(2, '0')}||${year}|${cvv}`;
+        }
+
         function clearInput() {
-            cardElement.clear();
-            log('Cleared card details.', 'log-invalid');
+            document.getElementById('inputData').value = '';
+            document.getElementById('card-count').innerText = '0 cards loaded';
         }
 
-        function startCheck() {
-            // Validate before proceeding
-            const { error, token } = stripe.cardNumber ? "pending" : ""; 
-            log('Validating card via Stripe Elements...', 'log-live');
-            
-            // Simulate a quick validation check
-            setTimeout(() => {
-                // In a real app, you would use stripe.createToken(cardElement) here
-                log('Card format valid.', 'log-live');
-                document.getElementById('status-text').innerText = "READY";
-                document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-blue-500 live-status";
-            }, 500);
+        function clearResults() {
+            document.getElementById('resultsBody').innerHTML = '';
+            results = [];
+            updateCounts();
         }
 
-        async function chargeSim() {
-            const amount = document.getElementById('amountInput').value;
-            log(`Charging $${amount}...`, 'log-err');
+        function updateCounts() {
+            let live = 0;
+            let dead = 0;
+            let vbv = 0;
+
+            results.forEach(r => {
+                if (r.status === 'LIVE') live++;
+                else if (r.status === 'VBV') vbv++;
+                else dead++;
+            });
+
+            document.getElementById('count-live').innerText = live;
+            document.getElementById('count-dead').innerText = dead;
+            document.getElementById('count-vbv').innerText = vbv;
+            document.getElementById('count-total').innerText = results.length;
+        }
+
+        async function startMassCheck() {
+            if (isProcessing) return;
             
-            try {
-                // In a real app, you would do:
-                // const { token, error } = await stripe.createToken(cardElement);
-                // if (error) { ... }
-                // const response = await fetch('/charge', { method: 'POST', body: JSON.stringify({ token, amount }) });
-                
-                // Simulating success
-                await new Promise(r => setTimeout(r, 1000));
-                
-                const success = Math.random() > 0.3; // 70% chance of success for demo
-                
-                if (success) {
-                    log(`Approved: $${amount}`, 'log-live');
-                    document.getElementById('count-live').innerText = parseInt(document.getElementById('count-live').innerText) + 1;
-                    document.getElementById('status-text').innerText = "APPROVED";
-                    document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-emerald-500 live-status";
-                } else {
-                    log(`Declined: $${amount}`, 'log-dead');
-                    document.getElementById('count-dead').innerText = parseInt(document.getElementById('count-dead').innerText) + 1;
-                    document.getElementById('status-text').innerText = "DECLINED";
-                    document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-red-500 dead-status";
-                }
-            } catch (e) {
-                log(`Error: ${e.message}`, 'log-err');
+            const input = document.getElementById('inputData').value.trim();
+            if (!input) {
+                log('No cards to check.', 'log-err');
+                return;
             }
+
+            const lines = input.split(/\n/).filter(l => l.trim().length > 0);
+            const normalizedCards = lines.map(line => ({
+                raw: line.trim(),
+                pipe: normalizeCard(line)
+            })).filter(c => c.pipe !== null);
+
+            if (normalizedCards.length === 0) {
+                log('No valid cards found in input.', 'log-err');
+                return;
+            }
+
+            log(`Loaded ${normalizedCards.length} cards.`, 'log-info');
+            document.getElementById('card-count').innerText = `${normalizedCards.length} cards loaded`;
+            
+            isProcessing = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('startBtn').classList.add('opacity-50');
+            document.getElementById('status-text').innerText = "PROCESSING";
+            document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-blue-500 live-status";
+
+            results = []; // Reset results for new batch
+            document.getElementById('resultsBody').innerHTML = '';
+
+            // Process in batches to avoid UI freeze
+            const batchSize = 10;
+            for (let i = 0; i < normalizedCards.length; i += batchSize) {
+                const batch = normalizedCards.slice(i, i + batchSize);
+                await processBatch(batch, i);
+            }
+
+            finishProcessing();
+        }
+
+        async function processBatch(batch, startIndex) {
+            for (let card of batch) {
+                await checkSingleCard(card, startIndex++);
+                // Small delay to simulate network and allow UI update
+                await new Promise(r => setTimeout(r, 50)); 
+            }
+        }
+
+        async function checkSingleCard(card, index) {
+            // Simulate API Call
+            await new Promise(r => setTimeout(r, Math.random() * 300 + 100)); // 100-400ms delay
+
+            // Randomize Results for Demo
+            const rand = Math.random();
+            let status, message, vbvCheck;
+
+            if (rand < 0.3) {
+                status = 'LIVE';
+                message = 'Approved';
+                vbvCheck = Math.random() > 0.5 ? 'No' : 'Yes';
+            } else if (rand < 0.5) {
+                status = 'VBV';
+                message = 'VBV Required';
+                vbvCheck = 'Yes';
+            } else {
+                status = 'DEAD';
+                const errors = ['Insufficient Funds', 'Do Not Honor', 'Invalid Account', 'Lost Card', 'Stolen Card'];
+                message = errors[Math.floor(Math.random() * errors.length)];
+                vbvCheck = 'N/A';
+            }
+
+            const result = {
+                index: index + 1,
+                raw: card.raw,
+                pipe: card.pipe,
+                status: status,
+                message: message,
+                vbv: vbvCheck
+            };
+
+            results.push(result);
+            addResultToTable(result);
+            updateCounts();
+        }
+
+        function addResultToTable(result) {
+            const tbody = document.getElementById('resultsBody');
+            const tr = document.createElement('tr');
+            tr.className = 'border-b border-slate-800 hover:bg-slate-800/30 transition';
+            
+            let statusClass = '';
+            let statusIcon = '';
+            if (result.status === 'LIVE') {
+                statusClass = 'text-emerald-400 bg-emerald-900/20';
+                statusIcon = '<i class="fa-solid fa-check"></i>';
+            } else if (result.status === 'VBV') {
+                statusClass = 'text-blue-400 bg-blue-900/20';
+                statusIcon = '<i class="fa-solid fa-shield-halved"></i>';
+            } else {
+                statusClass = 'text-red-400 bg-red-900/20';
+                statusIcon = '<i class="fa-solid fa-xmark"></i>';
+            }
+
+            tr.innerHTML = `
+                <td class="p-3 text-slate-500">${result.index}</td>
+                <td class="p-3 text-slate-400 truncate max-w-xs" title="${result.raw}">${result.raw}</td>
+                <td class="p-3 text-slate-200 font-mono break-all">${result.pipe}</td>
+                <td class="p-3">
+                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold ${statusClass}">
+                        ${statusIcon} ${result.status}
+                    </span>
+                </td>
+                <td class="p-3 text-slate-400">${result.message} ${result.vbv !== 'N/A' ? `| VBV: ${result.vbv}` : ''}</td>
+                <td class="p-3 flex justify-center gap-2">
+                    <button onclick="copyText('${escapeHtml(result.pipe)}')" class="btn-copy bg-slate-700 hover:bg-slate-600 text-slate-200" title="Copy Pipe">
+                        <i class="fa-solid fa-copy"></i>
+                    </button>
+                    <button onclick="copyText('${escapeHtml(result.raw)} ${result.pipe}')" class="btn-copy bg-slate-700 hover:bg-slate-600 text-slate-200" title="Copy Full Row">
+                        <i class="fa-solid fa-list"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            
+            // Auto scroll to bottom if it's the last batch or if user is near bottom
+            const tableContainer = document.querySelector('.table-container');
+            if (tableContainer.scrollHeight - tableContainer.scrollTop - tableContainer.clientHeight < 100) {
+                tableContainer.scrollTop = tableContainer.scrollHeight;
+            }
+        }
+
+        function finishProcessing() {
+            isProcessing = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('startBtn').classList.remove('opacity-50');
+            document.getElementById('status-text').innerText = "DONE";
+            document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-emerald-500 live-status";
+            log(`Processing complete. ${results.length} cards checked.`, 'log-info');
+        }
+
+        // Copy Functions
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Visual feedback could be added here
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        function copyColumn(type) {
+            let text = '';
+            if (type === 'pipes') {
+                text = results.map(r => r.pipe).join('\n');
+            } else if (type === 'status') {
+                text = results.map(r => `${r.pipe}|${r.status}|${r.message}`).join('\n');
+            } else if (type === 'full') {
+                text = results.map(r => `${r.raw}|${r.pipe}|${r.status}|${r.message}|VBV:${r.vbv}`).join('\n');
+            }
+            navigator.clipboard.writeText(text);
+            log(`Copied ${type} to clipboard.`, 'log-info');
+        }
+
+        function exportCSV() {
+            if (results.length === 0) return;
+            const headers = ['Index', 'Raw', 'Pipe', 'Status', 'Message', 'VBV'];
+            const csvContent = [
+                headers.join(','),
+                ...results.map(r => [
+                    r.index,
+                    `"${r.raw.replace(/"/g, '""')}"`,
+                    `"${r.pipe.replace(/"/g, '""')}"`,
+                    r.status,
+                    `"${r.message.replace(/"/g, '""')}"`,
+                    r.vbv
+                ].join(','))
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `nova_gw_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.csv`;
+            link.click();
+            log('CSV exported.', 'log-info');
         }
 
         function log(message, className) {
-            const consoleDiv = document.getElementById('consoleOutput');
-            const entry = document.createElement('div');
-            entry.className = `log-entry ${className}`;
-            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
-            entry.innerHTML = `<span class="text-slate-600">[${time}]</span> ${message}`;
-            consoleDiv.appendChild(entry);
-            consoleDiv.scrollTop = consoleDiv.scrollHeight;
-            
-            const currentTotal = document.getElementById('count-total').innerText;
-            document.getElementById('count-total').innerText = parseInt(currentTotal) + 1;
+            // Optional: Add to a hidden console if needed, but table is the main output
+            console.log(`[${new Date().toLocaleTimeString()}] ${message}`);
         }
 
-        function clearConsole() {
-            const consoleDiv = document.getElementById('consoleOutput');
-            consoleDiv.innerHTML = '';
-            document.getElementById('count-live').innerText = "0";
-            document.getElementById('count-dead').innerText = "0";
-            document.getElementById('count-total').innerText = "0";
-            log('Console cleared.', 'log-invalid');
+        function escapeHtml(text) {
+            return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         }
     </script>
 </body>
