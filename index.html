@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NOVA GATEWAY - Luhn & Auto-Charge</title>
+    <title>NOVA GATEWAY - Fixed Buttons</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- REPLACE WITH YOUR NEW TOKEN -->
@@ -48,7 +48,7 @@
                 <h1 class="text-3xl font-black tracking-tighter text-white uppercase italic">
                     NOVA <span class="text-blue-500 not-italic">GATEWAY</span>
                 </h1>
-                <p class="text-xs font-mono text-slate-500 mt-1">Secure Terminal // Luhn & Auto-Charge v4.0</p>
+                <p class="text-xs font-mono text-slate-500 mt-1">Secure Terminal // Luhn & Auto-Charge v5.0 (Debug Mode)</p>
             </div>
             <div class="flex items-center gap-2 text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1 rounded border border-slate-800">
                 <span id="status-dot" class="w-2 h-2 rounded-full bg-slate-600"></span>
@@ -100,7 +100,7 @@
                                 class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-6 pr-3 py-2 text-sm text-white focus:border-blue-500 outline-none">
                         </div>
                         <button onclick="startCharge()" id="chargeBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-emerald-900/50 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                            <i class="fa-solid fa-bolt"></i> CHARGE
+                            <i class="fa-solid fa-bolt"></i> CHARGE (SIM)
                         </button>
                     </div>
                 </div>
@@ -142,6 +142,7 @@
         const progressBar = document.getElementById('progressBar');
         const timerText = document.getElementById('timerText');
         const chargeBtn = document.getElementById('chargeBtn');
+        const startBtn = document.getElementById('startBtn');
 
         let liveCards = [];
         let totalProcessed = 0;
@@ -197,6 +198,7 @@
             chargeIndicator.classList.add('hidden');
             chargeBtn.disabled = true;
             isCharging = false;
+            updateStatus('IDLE');
         }
 
         function parseCards(text) {
@@ -206,6 +208,12 @@
 
         // PHASE 1: VERIFICATION
         async function startCheck() {
+            // Debug: Check if button is disabled
+            if(startBtn.disabled) {
+                log('Start Button is already disabled or processing.', 'error');
+                return;
+            }
+
             const text = document.getElementById('inputData').value;
             const cards = parseCards(text);
             
@@ -220,6 +228,7 @@
             totalProcessed = cards.length;
             chargeIndicator.classList.add('hidden');
             chargeBtn.disabled = true;
+            startBtn.disabled = true; // Disable start button while processing
 
             for (let i = 0; i < cards.length; i++) {
                 const raw = cards[i];
@@ -278,7 +287,7 @@
                         });
                     }
                 } catch (e) {
-                    log(`${raw} <span class="log-err">ERROR</span>`);
+                    log(`${raw} <span class="log-err">ERROR</span> - ${e.message}`);
                 }
 
                 liveCountEl.innerText = liveFound;
@@ -287,6 +296,8 @@
                 
                 await new Promise(r => setTimeout(r, 50)); 
             }
+
+            startBtn.disabled = false; // Re-enable start button
 
             // Start Auto Charge Phase
             if (liveCards.length > 0) {
@@ -301,7 +312,7 @@
         function startAutoCharge(seconds) {
             updateStatus('WAITING');
             chargeIndicator.classList.remove('hidden');
-            chargeBtn.disabled = false;
+            chargeBtn.disabled = false; // Enable manual charge too
             chargeBtn.innerHTML = `<i class="fa-solid fa-bolt"></i> AUTO-CHARGE IN ${seconds}s`;
             
             let remaining = seconds;
@@ -324,6 +335,7 @@
         async function startCharge() {
             if (isCharging) return;
             isCharging = true;
+            chargeBtn.disabled = true;
             
             const amountInput = document.getElementById('chargeAmount');
             const amountFloat = parseFloat(amountInput.value);
@@ -343,7 +355,7 @@
             }
 
             updateStatus('CHARGING');
-            log(`Charging $${amountFloat} to ${liveCards.length} cards...`, 'info');
+            log(`Charging $${amountFloat} to ${liveCards.length} cards (Simulated)...`, 'info');
 
             for (let pm of liveCards) {
                 await processCharge(pm.pm_id, amountFloat);
@@ -355,21 +367,16 @@
             log(`Charge phase complete.`, 'info');
             chargeIndicator.classList.add('hidden');
             chargeBtn.disabled = true;
-            chargeBtn.innerHTML = `<i class="fa-solid fa-bolt"></i> CHARGE`;
+            chargeBtn.innerHTML = `<i class="fa-solid fa-bolt"></i> CHARGE (SIM)`;
         }
 
         async function processCharge(pmId, amount) {
             try {
-                // Note: Frontend-only charging usually requires a backend to create a PaymentIntent and return a Client Secret.
-                // Since we are purely frontend, we will simulate the charge or use a method that works if you have a backend setup.
-                // For now, we log it as a success for demonstration.
-                
-                log(`Charging $${amount} on ${pmId.substring(0,8)}...`, 'info');
-                
                 // Simulate API call delay
                 await new Promise(r => setTimeout(r, 200));
                 
-                log(`$${amount} -> <span class="text-green-400">APPROVED</span>`, 'live');
+                // Simulate success
+                log(`$${amount} -> <span class="text-green-400">APPROVED</span> (${pmId.substring(0,8)})`, 'live');
 
             } catch (e) {
                 log(`$${amount} -> <span class="text-red-400">FAILED</span>`, 'dead');
@@ -379,4 +386,3 @@
     </script>
 </body>
 </html>
-
