@@ -4,9 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NOVA GATEWAY - Enhanced Mass Checker</title>
+    <title>NOVA GATEWAY - Mass Card Checker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/card-validator@8.1.1/index.min.js"></script>
     <style>
         body { 
             background-color: #020617; 
@@ -44,6 +45,17 @@
         tr:hover {
             background-color: rgba(30, 41, 59, 0.5);
         }
+        
+        /* Brand Icons */
+        .brand-icon { font-size: 1.2rem; width: 24px; text-align: center; }
+        .brand-visa { color: #1a1f71; }
+        .brand-mastercard { color: #eb001b; }
+        .brand-amex { color: #006fcf; }
+        .brand-discover { color: #ff6000; }
+        .brand-diners { color: #0079be; }
+        .brand-jcb { color: #00529f; }
+        .brand-unknown { color: #94a3b8; }
+
         .btn-copy {
             padding: 4px 8px;
             border-radius: 4px;
@@ -51,10 +63,8 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        .btn-copy:hover {
-            background-color: rgba(255,255,255,0.1);
-        }
-        
+        .btn-copy:hover { background-color: rgba(255,255,255,0.1); }
+
         /* Toast Notification */
         #toast {
             visibility: hidden;
@@ -73,10 +83,7 @@
             opacity: 0;
             transition: opacity 0.3s;
         }
-        #toast.show {
-            visibility: visible;
-            opacity: 1;
-        }
+        #toast.show { visibility: visible; opacity: 1; }
     </style>
 </head>
 <body class="text-slate-200 font-sans selection:bg-blue-500/30 flex flex-col h-screen p-2 lg:p-4">
@@ -88,7 +95,7 @@
                 <h1 class="text-3xl font-black tracking-tighter text-white uppercase italic">
                     NOVA <span class="text-blue-500 not-italic">GATEWAY</span>
                 </h1>
-                <p class="text-xs font-mono text-slate-500 mt-1">Mass CC Checker // Auto-Format // VBV</p>
+                <p class="text-xs font-mono text-slate-500 mt-1">Mass CC Checker // Brand Detection // VBV Check</p>
             </div>
             <div class="flex items-center gap-4">
                 <div class="text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1 rounded border border-slate-800 flex items-center gap-2">
@@ -97,8 +104,8 @@
                 </div>
                 <div class="flex gap-2 text-xs font-mono bg-slate-900 px-3 py-1 rounded border border-slate-800">
                     <span class="text-emerald-400">Live: <span id="count-live">0</span></span>
-                    <span class="text-red-400">Dead: <span id="count-dead">0</span></span>
                     <span class="text-blue-400">VBV: <span id="count-vbv">0</span></span>
+                    <span class="text-red-400">Dead: <span id="count-dead">0</span></span>
                     <span class="text-slate-500">Total: <span id="count-total">0</span></span>
                 </div>
             </div>
@@ -131,6 +138,7 @@
                         <div class="grid grid-cols-2 gap-2">
                             <button onclick="copyColumn('pipes')" class="bg-slate-800 hover:bg-slate-700 text-xs py-2 rounded border border-slate-700 transition"><i class="fa-solid fa-copy"></i> All Pipes</button>
                             <button onclick="copyColumn('lives')" class="bg-emerald-900/30 hover:bg-emerald-900/50 text-emerald-400 border border-emerald-900/50 text-xs py-2 rounded transition"><i class="fa-solid fa-check"></i> Live Only</button>
+                            <button onclick="copyColumn('vbvs')" class="bg-blue-900/30 hover:bg-blue-900/50 text-blue-400 border border-blue-900/50 text-xs py-2 rounded transition"><i class="fa-solid fa-shield-halved"></i> VBV Only</button>
                             <button onclick="copyColumn('full')" class="col-span-2 bg-slate-800 hover:bg-slate-700 text-xs py-2 rounded border border-slate-700 transition"><i class="fa-solid fa-table"></i> Full Report (CSV)</button>
                         </div>
                     </div>
@@ -146,6 +154,7 @@
                             <thead>
                                 <tr class="text-xs font-bold text-slate-500 uppercase">
                                     <th class="p-3 border-b border-slate-800 w-12">#</th>
+                                    <th class="p-3 border-b border-slate-800 w-16">Brand</th>
                                     <th class="p-3 border-b border-slate-800">Raw Input</th>
                                     <th class="p-3 border-b border-slate-800">Normalized Pipe</th>
                                     <th class="p-3 border-b border-slate-800 w-24">Status</th>
@@ -229,9 +238,8 @@
             if (!parts) return null;
 
             // 3. Identify PAN (first long sequence)
-            // Assuming PAN is the first part with >10 digits
             let panIndex = parts.findIndex(p => p.length > 10);
-            if (panIndex === -1) panIndex = 0; // Fallback
+            if (panIndex === -1) panIndex = 0; 
 
             let pan = parts[panIndex];
             let remaining = [...parts.slice(0, panIndex), ...parts.slice(panIndex + 1)];
@@ -241,15 +249,12 @@
             let year = "";
             let cvv = "";
 
-            // Helper to find a valid MM in remaining parts
             let mmIdx = remaining.findIndex(p => p.length === 2 && parseInt(p) >= 1 && parseInt(p) <= 12);
             if (mmIdx !== -1) {
                 month = remaining[mmIdx];
                 remaining.splice(mmIdx, 1);
             }
 
-            // Helper to find a valid YY (2 digits) or YYYY (4 digits)
-            // Priority: Look for 4-digit first, then 2-digit
             let yyIdx = remaining.findIndex(p => p.length === 4 && parseInt(p) > 2000);
             if (yyIdx === -1) {
                 yyIdx = remaining.findIndex(p => p.length === 2 && parseInt(p) < 100);
@@ -265,18 +270,64 @@
                 remaining.splice(yyIdx, 1);
             }
 
-            // CVV is the last remaining part
             if (remaining.length > 0) {
                 cvv = remaining[remaining.length - 1];
                 if (cvv.length > 4) cvv = cvv.substring(0, 4);
             }
 
-            // Reconstruct normalized pipe
             let normalized = `${pan}|${month.padStart(2, '0')}||${year}|${cvv}`;
             
-            // Basic Validation: Does it look like a card?
             if (!month || !year) return { raw: line, pipe: normalized, valid: false };
             return { raw: line, pipe: normalized, valid: true };
+        }
+
+        // Utility: Get Card Brand Icon & Name
+        function getCardBrand(pan) {
+            // Use card-validator if available, otherwise manual regex
+            try {
+                const result = cardValidator.number(pan);
+                if (result.isPotentiallyValid || result.isValid) {
+                    return {
+                        brand: result.cardType,
+                        icon: getBrandIcon(result.cardType)
+                    };
+                }
+            } catch (e) {
+                // Fallback to regex
+            }
+            
+            // Manual Regex Fallback
+            const regex = {
+                visa: /^4/,
+                mastercard: /^5[1-5]/,
+                amex: /^3[47]/,
+                discover: /^6(?:011|5)/,
+                diners: /^3(?:0[0-5]|[68])/,
+                jcb: /^(?:2131|1800|35)/
+            };
+
+            for (const [brand, pattern] of Object.entries(regex)) {
+                if (pattern.test(pan)) {
+                    return {
+                        brand: brand,
+                        icon: getBrandIcon(brand)
+                    };
+                }
+            }
+            return { brand: 'Unknown', icon: '<i class="fa-solid fa-credit-card brand-icon brand-unknown"></i>' };
+        }
+
+        function getBrandIcon(brand) {
+            const icons = {
+                'Visa': '<i class="fa-brands fa-cc-visa brand-icon brand-visa"></i>',
+                'Mastercard': '<i class="fa-brands fa-cc-mastercard brand-icon brand-mastercard"></i>',
+                'American Express': '<i class="fa-brands fa-cc-amex brand-icon brand-amex"></i>',
+                'Discover': '<i class="fa-brands fa-cc-discover brand-icon brand-discover"></i>',
+                'Diners Club': '<i class="fa-solid fa-credit-card brand-icon brand-diners"></i>',
+                'JCB': '<i class="fa-brands fa-cc-jcb brand-icon brand-jcb"></i>',
+                'Unknown': '<i class="fa-solid fa-credit-card brand-icon brand-unknown"></i>'
+            };
+            return icons[brand] || icons['Unknown'];
         }
 
         function clearInput() {
@@ -290,7 +341,6 @@
             document.getElementById('card-count').innerText = `${count} cards loaded`;
         }
 
-        // Listen for input changes to update count
         document.getElementById('inputData').addEventListener('input', updateCardCount);
 
         async function startMassCheck() {
@@ -304,7 +354,6 @@
 
             const lines = input.split(/\n/).filter(l => l.trim().length > 0);
             
-            // Parse all lines first
             const parsedCards = lines.map((line, idx) => {
                 const p = parseCard(line);
                 return {
@@ -330,8 +379,7 @@
             results = []; 
             document.getElementById('resultsBody').innerHTML = '';
 
-            // Process in batches
-            const batchSize = 5; // Smaller batch for smoother UI with many cards
+            const batchSize = 5; 
             for (let i = 0; i < parsedCards.length; i += batchSize) {
                 const batch = parsedCards.slice(i, i + batchSize);
                 await processBatch(batch);
@@ -343,7 +391,7 @@
         async function processBatch(batch) {
             for (let cardObj of batch) {
                 await checkSingleCard(cardObj);
-                await new Promise(r => setTimeout(r, 20)); // Tiny delay for UI
+                await new Promise(r => setTimeout(r, 20)); 
             }
         }
 
@@ -370,13 +418,17 @@
                 vbvCheck = 'N/A';
             }
 
+            // Detect Brand
+            const brandInfo = getCardBrand(cardObj.parsed.pipe.split('|')[0]);
+
             const result = {
                 id: cardObj.id,
                 raw: cardObj.raw,
                 pipe: cardObj.parsed.pipe,
                 status: status,
                 message: message,
-                vbv: vbvCheck
+                vbv: vbvCheck,
+                brand: brandInfo
             };
 
             results.push(result);
@@ -387,7 +439,7 @@
         function addResultToTable(result) {
             const tbody = document.getElementById('resultsBody');
             const tr = document.createElement('tr');
-            tr.className = 'border-b border-slate-800 hover:bg-slate-800/30 transition animate-fade-in';
+            tr.className = 'border-b border-slate-800 hover:bg-slate-800/30 transition';
             
             let statusClass = '';
             let statusIcon = '';
@@ -404,6 +456,7 @@
 
             tr.innerHTML = `
                 <td class="p-3 text-slate-500">${result.id}</td>
+                <td class="p-3 text-slate-400">${result.brand.icon}</td>
                 <td class="p-3 text-slate-400 truncate max-w-xs" title="${result.raw}">${result.raw}</td>
                 <td class="p-3 text-slate-200 font-mono break-all">${result.pipe}</td>
                 <td class="p-3">
@@ -423,7 +476,6 @@
             `;
             tbody.appendChild(tr);
             
-            // Auto scroll
             const tableContainer = document.querySelector('.table-container');
             if (tableContainer.scrollHeight - tableContainer.scrollTop - tableContainer.clientHeight < 100) {
                 tableContainer.scrollTop = tableContainer.scrollHeight;
@@ -439,7 +491,6 @@
             showToast(`Done! ${results.length} cards checked.`, true);
         }
 
-        // Copy Functions
         function copyText(text) {
             navigator.clipboard.writeText(text).then(() => {
                 showToast("Copied to clipboard!", true);
@@ -459,13 +510,20 @@
                     return;
                 }
                 text = lives.map(r => r.pipe).join('\n');
+            } else if (type === 'vbvs') {
+                const vbvs = results.filter(r => r.vbv === 'Yes');
+                if (vbvs.length === 0) {
+                    showToast("No VBV cards found!", false);
+                    return;
+                }
+                text = vbvs.map(r => r.pipe).join('\n');
             } else if (type === 'full') {
                 text = results.map(r => `${r.id},${r.raw},${r.pipe},${r.status},${r.message},VBV:${r.vbv}`).join('\n');
             }
             
             if (text) {
                 navigator.clipboard.writeText(text);
-                showToast(`Copied ${type === 'lives' ? lives.length : results.length} items!`, true);
+                showToast(`Copied ${type === 'lives' ? lives.length : type === 'vbvs' ? vbvs.length : results.length} items!`, true);
             }
         }
 
