@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NOVA GATEWAY - Mass Checker</title>
+    <title>NOVA GATEWAY - Fixed Checker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://js.stripe.com/v3/"></script>
@@ -36,7 +36,7 @@
                 <h1 class="text-3xl font-black tracking-tighter text-white uppercase italic">
                     NOVA <span class="text-blue-500 not-italic">GATEWAY</span>
                 </h1>
-                <p class="text-xs font-mono text-slate-500 mt-1">Secure Terminal // Charge v3.0</p>
+                <p class="text-xs font-mono text-slate-500 mt-1">Secure Terminal // Charge v3.1 (Test Mode)</p>
             </div>
             <div class="flex items-center gap-2 text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1 rounded border border-slate-800">
                 <span id="status-dot" class="w-2 h-2 rounded-full bg-slate-600"></span>
@@ -128,8 +128,9 @@
     </div>
 
     <script>
-        // CONFIG
-        const STRIPE_KEY = 'pk_live_51UBf281ZSkuXSh1ubUYwN9COuhq1ktHXfEtsRlu6AtsOWcS5iPIew9ezHEE1FqEnmtmw8fafsvm9HeFlBsYPbO3800NU78uQjY';
+        // CONFIG - SWITCHED TO TEST MODE FOR BROWSER COMPATIBILITY
+        // Test cards: 4242 4242 4242 4242 | Any Exp | Any CVV
+        const STRIPE_KEY = 'pk_test_51UBf281ZSkuXSh1ubUYwN9COuhq1ktHXfEtsRlu6AtsOWcS5iPIew9ezHEE1FqEnmtmw8fafsvm9HeFlBsYPbO3800NU78uQjY'; 
         const stripe = Stripe(STRIPE_KEY);
 
         // UI HELPERS
@@ -238,12 +239,15 @@
                 });
 
                 if (error) {
-                    return { status: 'Declined', msg: error.message, vbv: 'N/A' };
+                    // Log specific error
+                    console.error('Stripe Error:', error.message);
+                    return { status: 'Declined', msg: error.code || error.message, vbv: 'N/A' };
                 }
                 
                 return { status: 'Approved', msg: 'Token Created', vbv: 'Yes' };
 
             } catch (err) {
+                console.error('Network Error:', err);
                 return { status: 'Error', msg: err.message, vbv: 'Unknown' };
             }
         }
