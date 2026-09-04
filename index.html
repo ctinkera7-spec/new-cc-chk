@@ -1,173 +1,115 @@
-
+Copy
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Luhn CC Checker</title>
+    <title>Pro Luhn Checker</title>
     <style>
         :root {
-            --bg: #0f172a;
-            --card-bg: #1e293b;
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent: #3b82f6;
+            --bg: #09090b;
+            --surface: #18181b;
+            --surface-border: #27272a;
+            --text: #fafafa;
+            --text-muted: #a1a1aa;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
             --live: #10b981;
             --dead: #ef4444;
             --unknown: #f59e0b;
-            --border: #334155;
-            --radius: 12px;
+            --invalid: #71717a;
+            --radius: 8px;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
         body {
             background-color: var(--bg);
             color: var(--text);
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 2rem;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 20px;
+            padding-bottom: 80px; /* Space for toast */
         }
 
-        .container {
-            width: 100%;
-            max-width: 900px;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
+        .container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 
-        /* Header */
-        header {
-            text-align: center;
-            margin-bottom: 1rem;
-        }
-        h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 0.5rem; }
-        p.subtitle { color: var(--text-muted); font-size: 0.9rem; }
-
-        /* Input Area */
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
+        /* Header & Input */
+        header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        h1 { font-size: 1.5rem; font-weight: 700; }
+        
         textarea {
             width: 100%;
-            height: 180px;
-            background-color: var(--card-bg);
-            border: 1px solid var(--border);
+            height: 150px;
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
             border-radius: var(--radius);
             color: var(--text);
-            padding: 1rem;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 1rem;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 14px;
             resize: vertical;
-            outline: none;
-            transition: border-color 0.2s;
         }
 
-        textarea:focus { border-color: var(--accent); }
-
+        .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+        
         button {
-            background-color: var(--accent);
+            background: var(--primary);
             color: white;
             border: none;
-            padding: 1rem;
+            padding: 12px 24px;
             border-radius: var(--radius);
-            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: opacity 0.2s;
+            transition: 0.2s;
+            font-size: 14px;
         }
-
-        button:hover { opacity: 0.9; }
-        button:disabled { background-color: var(--border); cursor: not-allowed; }
-
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-        }
-
-        .stat-card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border);
+        button:hover { background: var(--primary-hover); }
+        button.secondary { background: var(--surface); border: 1px solid var(--surface-border); }
+        button.secondary:hover { background: #27272a; }
+        
+        /* Stats */
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .stat-box {
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            padding: 15px;
             border-radius: var(--radius);
-            padding: 1.5rem;
             text-align: center;
             position: relative;
             overflow: hidden;
         }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 4px; height: 100%;
+        .stat-box::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
         }
+        .stat-box.live::after { background: var(--live); }
+        .stat-box.dead::after { background: var(--dead); }
+        .stat-box.unknown::after { background: var(--unknown); }
 
-        .stat-card.live::before { background-color: var(--live); }
-        .stat-card.dead::before { background-color: var(--dead); }
-        .stat-card.unknown::before { background-color: var(--unknown); }
+        .stat-val { font-size: 2rem; font-weight: 700; margin-bottom: 5px; }
+        .stat-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
 
-        .stat-count {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            font-weight: 600;
-            letter-spacing: 1px;
-            color: var(--text-muted);
-        }
-
-        .live .stat-count { color: var(--live); }
-        .dead .stat-count { color: var(--dead); }
-        .unknown .stat-count { color: var(--unknown); }
-
-        /* Results Table */
-        .results-container {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border);
+        /* Results List */
+        .results-list { display: flex; flex-direction: column; gap: 10px; }
+        
+        .card-item {
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
             border-radius: var(--radius);
-            overflow: hidden;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .results-header {
+            padding: 15px;
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr 2fr;
-            padding: 1rem;
-            background-color: rgba(0,0,0,0.2);
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .result-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 2fr;
-            padding: 1rem;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.9rem;
+            grid-template-columns: 1fr 120px 1fr;
+            gap: 15px;
             align-items: center;
-            transition: background 0.1s;
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
         }
+        .card-item:hover { border-color: var(--text-muted); background: #1f1f23; }
+        .card-item:active { transform: scale(0.99); }
 
-        .result-row:last-child { border-bottom: none; }
-        .result-row:hover { background-color: rgba(255,255,255,0.03); }
-
-        .cc-number { font-family: 'Courier New', monospace; font-weight: 600; color: var(--text); }
-        .status-badge {
+        .card-info { font-family: monospace; font-size: 1.1rem; font-weight: 600; letter-spacing: 0.5px; }
+        .card-meta { display: flex; flex-direction: column; gap: 4px; }
+        .status-tag {
+            display: inline-block;
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 0.75rem;
@@ -176,242 +118,276 @@
             width: fit-content;
         }
         
-        .status-live { background: rgba(16, 185, 129, 0.1); color: var(--live); border: 1px solid var(--live); }
-        .status-dead { background: rgba(239, 68, 68, 0.1); color: var(--dead); border: 1px solid var(--dead); }
-        .status-unknown { background: rgba(245, 158, 11, 0.1); color: var(--unknown); border: 1px solid var(--unknown); }
-        .status-invalid { background: rgba(148, 163, 184, 0.1); color: var(--text-muted); border: 1px solid var(--text-muted); }
+        .status-live { background: rgba(16, 185, 129, 0.1); color: var(--live); }
+        .status-dead { background: rgba(239, 68, 68, 0.1); color: var(--dead); }
+        .status-unknown { background: rgba(245, 158, 11, 0.1); color: var(--unknown); }
+        .status-invalid { background: rgba(113, 113, 122, 0.1); color: var(--invalid); }
 
-        .reason { font-size: 0.8rem; color: var(--text-muted); }
+        .reason { font-size: 0.85rem; color: var(--text-muted); }
 
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg); }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-
+        /* Mobile Adjustments */
         @media (max-width: 600px) {
-            .stats-grid { grid-template-columns: 1fr; }
-            .results-header, .result-row { grid-template-columns: 1.5fr 1fr 1fr; }
-            .results-header > :nth-child(4), .result-row > :nth-child(4) { display: none; }
+            .card-item { grid-template-columns: 1fr; gap: 8px; }
+            .card-item .card-meta { flex-direction: row; align-items: center; justify-content: space-between; }
+            .stat-val { font-size: 1.5rem; }
         }
+
+        /* Toast */
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--text);
+            color: var(--bg);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        #toast.show { opacity: 1; }
+
+        /* Copy Button inside item */
+        .copy-icon {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            opacity: 0;
+            transition: 0.2s;
+            color: var(--primary);
+        }
+        .card-item:hover .copy-icon { opacity: 1; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>Luhn Checker</h1>
-        <p class="subtitle">Paste pipe-formatted cards below (Number|MM/YY|CVV or Number|MM|YY|CVV)</p>
+        <h1>Luhn Check Pro</h1>
+        <div class="btn-row">
+            <button class="secondary" onclick="copyStatus('live')">Copy Live</button>
+            <button class="secondary" onclick="copyStatus('dead')">Copy Dead</button>
+            <button class="secondary" onclick="copyStatus('unknown')">Copy Unknown</button>
+        </div>
     </header>
 
     <div class="input-group">
-        <textarea id="inputData" placeholder="4111111111111111|12|2025|123&#10;5500000000000004|01/26|456&#10;4000222222222222|05|2024|789"></textarea>
-        <button id="analyzeBtn" onclick="analyzeCards()">Analyze</button>
+        <textarea id="inputData" placeholder="4111111111111111|12|2025|123&#10;5500000000000004|01/26|456"></textarea>
+        <button onclick="analyze()" id="analyzeBtn">Analyze Cards</button>
     </div>
 
-    <div class="stats-grid">
-        <div class="stat-card live">
-            <div class="stat-count" id="countLive">0</div>
+    <div class="stats">
+        <div class="stat-box live">
+            <div class="stat-val" id="countLive">0</div>
             <div class="stat-label">Live</div>
         </div>
-        <div class="stat-card dead">
-            <div class="stat-count" id="countDead">0</div>
+        <div class="stat-box dead">
+            <div class="stat-val" id="countDead">0</div>
             <div class="stat-label">Dead</div>
         </div>
-        <div class="stat-card unknown">
-            <div class="stat-count" id="countUnknown">0</div>
+        <div class="stat-box unknown">
+            <div class="stat-val" id="countUnknown">0</div>
             <div class="stat-label">Unknown</div>
         </div>
     </div>
 
-    <div class="results-container" id="resultsContainer">
-        <div class="results-header">
-            <div>Card Details</div>
-            <div>Status</div>
-            <div>Reason</div>
-            <div>Details</div>
-        </div>
-        <div id="resultsList">
-            <!-- Results injected here -->
-        </div>
+    <div class="results-list" id="resultsList">
+        <!-- Items go here -->
     </div>
 </div>
 
-<script>
-    // --- Logic ---
+<div id="toast">Copied!</div>
 
-    function parseCardLine(line) {
-        // Remove whitespace
+<script>
+    // --- Core Logic ---
+
+    function parseLine(line) {
         line = line.trim();
         if (!line) return null;
-
-        // Split by pipe
-        const parts = line.split('|');
         
-        if (parts.length < 3) {
-            return { raw: line, valid: false, reason: "Format Error: Expected at least 3 parts (Num|Date|CVV)" };
-        }
+        const parts = line.split('|');
+        if (parts.length < 2) return { raw: line, valid: false, reason: "Missing separator (|)", number: line };
 
         const number = parts[0].trim();
-        const datePart = parts[1].trim();
-        const cvv = parts[2].trim();
+        const date = parts[1].trim();
+        const cvv = parts[2] ? parts[2].trim() : "N/A";
 
-        // Normalize date handling
-        // Formats: MM/YY, MM|YY (if split weirdly), MM/YY/CCYY
-        let month = "";
-        let year = "";
+        let month = "", year = "";
         
-        if (datePart.includes('/')) {
-            const [m, y] = datePart.split('/');
-            month = m;
-            year = y;
-        } else if (parts.length >= 4) {
-             // Handle format: Num|MM|YY|CVV
-             month = parts[1].trim();
-             year = parts[2].trim();
+        if (date.includes('/')) {
+            [month, year] = date.split('/');
+        } else if (parts.length > 2) {
+            month = parts[1].trim();
+            year = parts[2].trim();
         } else {
-            month = datePart;
+            month = date;
             year = "";
         }
 
-        // Clean up year (remove 2024 -> 24 if needed, though Luhn doesn't care about year)
-        year = year.replace(/^20/, '');
-
-        return {
-            raw: line,
-            number: number,
-            month: month,
-            year: year,
-            cvv: cvv
-        };
+        return { raw: line, number, month, year, cvv, valid: true };
     }
 
-    function luhnCheck(numStr) {
-        let arr = (numStr + '').split('').map(x => parseInt(x));
-        if (arr.length === 0) return false;
-        
-        // Reverse for calculation
-        arr.reverse();
-        
+    function luhnCheck(num) {
+        if (!num || num.length < 12) return false; // Minimum length for most cards
+
+        // Remove non-digits just in case
+        num = num.replace(/\D/g, '');
+        if (num.length < 13) return false;
+
         let sum = 0;
-        for (let i = 0; i < arr.length; i++) {
-            let n = arr[i];
-            if (i % 2 === 1) {
-                n *= 2;
-                if (n > 9) n -= 9;
+        let isEven = false;
+        
+        // Iterate backwards
+        for (let i = num.length - 1; i >= 0; i--) {
+            let digit = parseInt(num[i], 10);
+            
+            if (isEven) {
+                digit *= 2;
+                if (digit > 9) digit -= 9;
             }
-            sum += n;
+            
+            sum += digit;
+            isEven = !isEven;
         }
         
         return sum % 10 === 0;
     }
 
-    function detectBin(number) {
-        // Simple BIN lookup simulation
-        if (number.startsWith('4')) return 'Visa';
-        if (number.startsWith('5') || number.startsWith('2')) return 'Mastercard';
-        if (number.startsWith('3')) return 'Amex';
-        if (number.startsWith('6')) return 'Discover';
-        return 'Unknown';
+    function getBin(num) {
+        if (num.startsWith('4')) return 'Visa';
+        if (num.startsWith('5') || num.startsWith('2')) return 'Mastercard';
+        if (num.startsWith('34') || num.startsWith('37')) return 'Amex';
+        if (num.startsWith('6')) return 'Discover';
+        return 'Other';
     }
 
-    // Simulate API check
-    function simulateApiCheck(cardData) {
-        return new Promise((resolve) => {
+    // Simulate API check (Replace this with your actual API call)
+    function checkCard(cardObj) {
+        return new Promise(resolve => {
             setTimeout(() => {
-                const rand = Math.random();
-                let status, reason, details;
-
-                if (!cardData.valid) {
-                    resolve({ ...cardData, status: 'dead', reason: cardData.reason, details: 'Invalid Format' });
-                    return;
-                }
-
-                if (!luhnCheck(cardData.number)) {
-                    resolve({ ...cardData, status: 'dead', reason: 'Luhn Failed', details: 'Check digit invalid' });
-                    return;
-                }
-
-                // Simulate Live/Dead/Unknown
-                if (rand > 0.7) {
-                    status = 'live';
-                    reason = 'Approved / Live';
-                    details = `${detectBin(cardData.number)} • ${cardData.month}/${cardData.year} • CVV: ${cardData.cvv}`;
-                } else if (rand > 0.3) {
-                    status = 'dead';
-                    reason = 'Declined / Invalid';
-                    details = `${detectBin(cardData.number)} • ${cardData.month}/${cardData.year} • CVV: ${cardData.cvv}`;
+                const isValid = luhnCheck(cardObj.number);
+                
+                if (!isValid) {
+                    resolve({ ...cardObj, status: 'dead', reason: 'Luhn Check Failed', isLive: false });
                 } else {
-                    status = 'unknown';
-                    reason = 'Unknown / Pending';
-                    details = `${detectBin(cardData.number)} • ${cardData.month}/${cardData.year} • CVV: ${cardData.cvv}`;
+                    // Simulate random results for demo
+                    const r = Math.random();
+                    if (r > 0.7) resolve({ ...cardObj, status: 'live', reason: 'Approved', isLive: true });
+                    else if (r > 0.3) resolve({ ...cardObj, status: 'dead', reason: 'Declined', isLive: false });
+                    else resolve({ ...cardObj, status: 'unknown', reason: 'Unknown', isLive: null });
                 }
-
-                resolve({ ...cardData, status, reason, details });
-            }, 300 + Math.random() * 500); // Random delay 0.3-0.8s
+            }, 200);
         });
     }
 
-    async function analyzeCards() {
+    // --- UI Logic ---
+
+    let currentResults = [];
+
+    async function analyze() {
         const input = document.getElementById('inputData').value;
         const btn = document.getElementById('analyzeBtn');
         const list = document.getElementById('resultsList');
-        const container = document.getElementById('resultsContainer');
-
-        if (!input.trim()) return;
-
-        // UI Reset
+        
         btn.disabled = true;
-        btn.innerText = "Analyzing...";
+        btn.innerText = "Processing...";
         list.innerHTML = '';
         
-        // Reset Counters
-        let counts = { live: 0, dead: 0, unknown: 0 };
+        const lines = input.split('\n').filter(l => l.trim());
+        currentResults = [];
+        
+        // Reset counters
         document.getElementById('countLive').innerText = '0';
         document.getElementById('countDead').innerText = '0';
         document.getElementById('countUnknown').innerText = '0';
 
-        const lines = input.split('\n').filter(l => l.trim() !== '');
-        const promises = lines.map(line => {
-            const parsed = parseCardLine(line);
-            return simulateApiCheck(parsed);
+        const promises = lines.map(l => {
+            const parsed = parseLine(l);
+            return checkCard(parsed);
         });
 
         const results = await Promise.all(promises);
-
+        
         results.forEach(res => {
-            // Update Counts
-            if (['live', 'dead', 'unknown'].includes(res.status)) {
-                counts[res.status]++;
-            }
+            currentResults.push(res);
+            renderCard(res);
         });
 
-        // Update UI Counts
-        document.getElementById('countLive').innerText = counts.live;
-        document.getElementById('countDead').innerText = counts.dead;
-        document.getElementById('countUnknown').innerText = counts.unknown;
-
-        // Render Rows
-        results.forEach(res => {
-            const row = document.createElement('div');
-            row.className = 'result-row';
-            
-            // Format card number with spaces for readability (optional, but cleaner)
-            const displayNum = res.number.replace(/(.{4})/g, '$1 ').trim();
-
-            row.innerHTML = `
-                <div class="cc-number">${displayNum}</div>
-                <div><span class="status-badge status-${res.status}">${res.status}</span></div>
-                <div class="reason">${res.reason}</div>
-                <div class="reason" style="opacity: 0.6;">${res.details}</div>
-            `;
-            list.appendChild(row);
-        });
-
+        updateCounts();
         btn.disabled = false;
-        btn.innerText = "Analyze";
+        btn.innerText = "Analyze Cards";
+    }
+
+    function renderCard(data) {
+        const list = document.getElementById('resultsList');
+        const div = document.createElement('div');
+        div.className = `card-item`;
+        
+        // Format number for display (spaces every 4)
+        const formattedNum = data.number.replace(/(.{4})/g, '$1 ').trim();
+        
+        div.innerHTML = `
+            <div class="copy-icon" title="Copy to clipboard">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </div>
+            <div class="card-info">${formattedNum}</div>
+            <div class="card-meta">
+                <span class="status-tag status-${data.status}">${data.status}</span>
+                <div class="reason">${data.reason}</div>
+            </div>
+            <div class="card-meta" style="align-items: flex-end; font-size: 0.85rem; color: #71717a;">
+                ${data.month}/${data.year} • ${data.cvv}
+            </div>
+        `;
+
+        // Click to copy
+        div.onclick = () => copyToClipboard(data.raw);
+        
+        list.prepend(div); // Newest first
+    }
+
+    function updateCounts() {
+        let live = 0, dead = 0, unknown = 0;
+        currentResults.forEach(r => {
+            if (r.status === 'live') live++;
+            else if (r.status === 'dead') dead++;
+            else unknown++;
+        });
+        
+        document.getElementById('countLive').innerText = live;
+        document.getElementById('countDead').innerText = dead;
+        document.getElementById('countUnknown').innerText = unknown;
+    }
+
+    // --- Utilities ---
+
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => showToast("Copied: " + text));
+    }
+
+    function copyStatus(status) {
+        const filtered = currentResults
+            .filter(r => r.status === status)
+            .map(r => r.raw)
+            .join('\n');
+        
+        if (!filtered) {
+            showToast("No " + status + " cards found");
+            return;
+        }
+        copyToClipboard(filtered);
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2000);
     }
 </script>
-
 </body>
 </html>
+
