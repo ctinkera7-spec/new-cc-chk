@@ -3,548 +3,451 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NOVA GATEWAY - Mass Card Checker</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/card-validator@8.1.1/index.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BIN & Luhn Bulk Checker</title>
     <style>
-        body { 
-            background-color: #020617; 
-            height: 100vh; 
-            overflow: hidden; 
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --accent: #00adb5;
+            --accent-hover: #008c93;
+            --border: #333;
+            --success: #00c853;
+            --error: #d50000;
+            --input-bg: #2c2c2c;
         }
-        .glass { 
-            background: rgba(15, 23, 42, 0.6); 
-            backdrop-filter: blur(12px); 
-            border: 1px solid rgba(51, 65, 85, 0.5); 
-        }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        
-        @keyframes pulse-green { 0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } }
-        @keyframes pulse-red { 0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } }
-        @keyframes pulse-blue { 0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); } }
-        
-        .live-status { animation: pulse-green 2s infinite; }
-        .dead-status { animation: pulse-red 2s infinite; }
-        .vbv-status { animation: pulse-blue 2s infinite; }
 
-        .table-container {
-            overflow-y: auto;
-            flex: 1;
-        }
-        th {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            background: #0f172a;
-            backdrop-filter: blur(4px);
-        }
-        tr:hover {
-            background-color: rgba(30, 41, 59, 0.5);
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         
-        /* Brand Icons */
-        .brand-icon { font-size: 1.2rem; width: 24px; text-align: center; }
-        .brand-visa { color: #1a1f71; }
-        .brand-mastercard { color: #eb001b; }
-        .brand-amex { color: #006fcf; }
-        .brand-discover { color: #ff6000; }
-        .brand-diners { color: #0079be; }
-        .brand-jcb { color: #00529f; }
-        .brand-unknown { color: #94a3b8; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 10px;
+            padding-bottom: 80px; /* Space for fixed button */
+        }
 
-        .btn-copy {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.7rem;
+        h1 {
+            font-size: 1.2rem;
+            text-align: center;
+            margin-bottom: 15px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: #aaa;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-color);
+            padding: 10px;
+            font-size: 0.9rem;
+            resize: vertical;
+            font-family: monospace;
+        }
+
+        textarea:focus, input:focus {
+            outline: 2px solid var(--accent);
+            border-color: transparent;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
             cursor: pointer;
-            transition: all 0.2s;
+            width: 100%;
+            transition: background 0.2s;
         }
-        .btn-copy:hover { background-color: rgba(255,255,255,0.1); }
+
+        .btn:active {
+            background-color: var(--accent-hover);
+            transform: scale(0.98);
+        }
+
+        .btn:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        .results-area {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .result-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.85rem;
+            word-break: break-all;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+
+        .result-bin {
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .result-status {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .status-valid { background-color: rgba(0, 200, 83, 0.2); color: var(--success); }
+        .status-invalid { background-color: rgba(213, 0, 0, 0.2); color: var(--error); }
+        .status-pending { background-color: rgba(255, 193, 7, 0.2); color: #ffc107; }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-size: 0.7rem;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .detail-value {
+            font-weight: 500;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .stats {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 10px;
+        }
 
         /* Toast Notification */
-        #toast {
-            visibility: hidden;
-            min-width: 250px; 
-            background-color: #10b981;
-            color: #fff;
-            text-align: center;
-            border-radius: 4px;
-            padding: 16px;
+        .toast {
             position: fixed;
-            z-index: 50;
+            bottom: 20px;
             left: 50%;
-            bottom: 30px;
             transform: translateX(-50%);
-            font-size: 14px;
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
             opacity: 0;
             transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 2000;
         }
-        #toast.show { visibility: visible; opacity: 1; }
+        .toast.show { opacity: 1; }
+
     </style>
 </head>
-<body class="text-slate-200 font-sans selection:bg-blue-500/30 flex flex-col h-screen p-2 lg:p-4">
+<body>
 
-    <div class="w-full max-w-7xl flex-1 flex flex-col">
-        <!-- Header -->
-        <header class="flex justify-between items-center mb-4 border-b border-slate-800 pb-4 shrink-0">
-            <div>
-                <h1 class="text-3xl font-black tracking-tighter text-white uppercase italic">
-                    NOVA <span class="text-blue-500 not-italic">GATEWAY</span>
-                </h1>
-                <p class="text-xs font-mono text-slate-500 mt-1">Mass CC Checker // Brand Detection // VBV Check</p>
-            </div>
-            <div class="flex items-center gap-4">
-                <div class="text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1 rounded border border-slate-800 flex items-center gap-2">
-                    <span id="status-dot" class="w-2 h-2 rounded-full bg-slate-600"></span>
-                    <span id="status-text">IDLE</span>
-                </div>
-                <div class="flex gap-2 text-xs font-mono bg-slate-900 px-3 py-1 rounded border border-slate-800">
-                    <span class="text-emerald-400">Live: <span id="count-live">0</span></span>
-                    <span class="text-blue-400">VBV: <span id="count-vbv">0</span></span>
-                    <span class="text-red-400">Dead: <span id="count-dead">0</span></span>
-                    <span class="text-slate-500">Total: <span id="count-total">0</span></span>
-                </div>
-            </div>
-        </header>
+    <h1>BIN & Luhn Checker</h1>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 min-h-0">
-            
-            <!-- Input Section -->
-            <div class="lg:col-span-4 flex flex-col gap-4 h-full">
-                <div class="glass p-4 rounded-xl shadow-2xl relative overflow-hidden flex flex-col h-full">
-                    <h2 class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-2 flex items-center gap-2 shrink-0">
-                        <i class="fa-solid fa-keyboard"></i> Input Cards
-                    </h2>
-                    
-                    <textarea id="inputData" 
-                        class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none text-slate-300 flex-1"
-                        placeholder="Paste cards here (mixed formats supported)&#10;e.g. 444444|12|2025|123"></textarea>
-                    
-                    <div class="flex justify-between items-center mt-3 shrink-0">
-                        <button onclick="clearInput()" class="text-xs text-slate-500 hover:text-slate-300 transition"><i class="fa-solid fa-trash"></i> Clear</button>
-                        <span class="text-xs text-slate-500" id="card-count">0 cards loaded</span>
-                    </div>
-
-                    <!-- Controls -->
-                    <div class="mt-3 flex flex-col gap-3 shrink-0">
-                        <button onclick="startMassCheck()" id="startBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-lg text-sm font-bold shadow-lg shadow-blue-900/50 transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-bolt"></i> START MASS CHECK
-                        </button>
-                        
-                        <div class="grid grid-cols-2 gap-2">
-                            <button onclick="copyColumn('pipes')" class="bg-slate-800 hover:bg-slate-700 text-xs py-2 rounded border border-slate-700 transition"><i class="fa-solid fa-copy"></i> All Pipes</button>
-                            <button onclick="copyColumn('lives')" class="bg-emerald-900/30 hover:bg-emerald-900/50 text-emerald-400 border border-emerald-900/50 text-xs py-2 rounded transition"><i class="fa-solid fa-check"></i> Live Only</button>
-                            <button onclick="copyColumn('vbvs')" class="bg-blue-900/30 hover:bg-blue-900/50 text-blue-400 border border-blue-900/50 text-xs py-2 rounded transition"><i class="fa-solid fa-shield-halved"></i> VBV Only</button>
-                            <button onclick="copyColumn('full')" class="col-span-2 bg-slate-800 hover:bg-slate-700 text-xs py-2 rounded border border-slate-700 transition"><i class="fa-solid fa-table"></i> Full Report (CSV)</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Output/Console Section -->
-            <div class="lg:col-span-8 flex flex-col h-full">
-                <div class="glass p-0 rounded-xl shadow-2xl relative overflow-hidden flex flex-col h-full">
-                    <!-- Table -->
-                    <div class="table-container">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="text-xs font-bold text-slate-500 uppercase">
-                                    <th class="p-3 border-b border-slate-800 w-12">#</th>
-                                    <th class="p-3 border-b border-slate-800 w-16">Brand</th>
-                                    <th class="p-3 border-b border-slate-800">Raw Input</th>
-                                    <th class="p-3 border-b border-slate-800">Normalized Pipe</th>
-                                    <th class="p-3 border-b border-slate-800 w-24">Status</th>
-                                    <th class="p-3 border-b border-slate-800">Details</th>
-                                    <th class="p-3 border-b border-slate-800 w-24 text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="resultsBody" class="text-sm font-mono">
-                                <!-- Results will be injected here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
+    <div class="container">
+        <!-- Single Card Mode -->
+        <div class="input-group">
+            <label for="single-bin">Single BIN Check</label>
+            <input type="text" id="single-bin" placeholder="Enter BIN (e.g., 411111)" maxlength="6">
+            <button class="btn" id="btn-check-single" onclick="checkSingleBin()">Check</button>
         </div>
+
+        <hr style="border-color: #333; margin: 10px 0;">
+
+        <!-- Bulk Mode -->
+        <div class="input-group">
+            <label for="bulk-input">Bulk BINs (one per line)</label>
+            <textarea id="bulk-input" placeholder="411111&#10;510510&#10;371449"></textarea>
+            <button class="btn" id="btn-bulk" onclick="checkBulk()">Check All</button>
+        </div>
+
+        <div class="results-area" id="results-container">
+            <!-- Results will appear here -->
+        </div>
+
+        <div class="stats" id="stats-display"></div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast">Copied to clipboard!</div>
+    <div class="loading-overlay" id="loader">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="toast" id="toast">Copied to clipboard!</div>
 
     <script>
-        // Default data provided by user
-        const defaultInput = `4867863024656733|12|2031|907
-4867861500170955|06|2031|307
-4867862080626804|09|2031|301
-4867867949267872|08|2031|866
-4867867761065321|01|2031|842
-4867860341367903|02|2027|386
-4867868777635933|10|2027|743
-4867869821298892|04|2030|418
-4867865744958711|07|2031|908
-4867864947031053|02|2028|741
-4867862133200128|08|2028|369
-4867864266142358|01|2029|817
-4867863069075161|07|2030|939
-4867862012302292|11|2029|564
-4867864668166864|11|2027|821
-4867869853197129|11|2030|172
-4867864290734717|11|2031|801
-4867864897435338|11|2027|725
-4867864563187817|07|2028|725
-4867864495196928|03|2028|193
-4867867845953559|02|2028|790
-4867860451259536|12|2027|477
-4867864919996796|04|2031|772
-4867867930296252|11|2027|425
-4867862689432307|09|2029|476
-4867866163001033|11|2029|895
-4867866556861803|06|2030|257
-4867865455076935|10|2030|445
-4867869685383566|12|2030|631
-4867868294271055|07|2028|889
-4867862181876308|03|2031|736
-4867865409742954|12|2028|299
-4867864560365390|04|2028|261
-4867868931831493|08|2028|255
-4867869541666550|11|2027|852
-4867862205733576|12|2030|568
-4867865257995167|09|2030|651
-4867860825653711|10|2029|593
-4867864009785265|01|2031|589
-4867864092133670|10|2027|349
-4031631179624769|05|31|475`;
+        // Configuration
+        const API_BASE = "https://api.freebinchecker.com/bin/";
+        
+        // DOM Elements
+        const singleInput = document.getElementById('single-bin');
+        const bulkInput = document.getElementById('bulk-input');
+        const resultsContainer = document.getElementById('results-container');
+        const loader = document.getElementById('loader');
+        const statsDisplay = document.getElementById('stats-display');
+        const toast = document.getElementById('toast');
 
-        // Global State
-        let results = [];
-        let isProcessing = false;
-
-        // Initialize with default data
-        document.getElementById('inputData').value = defaultInput;
-        updateCardCount();
-
-        // Utility: Parse Card
-        function parseCard(line) {
-            // 1. Clean input: remove spaces, slashes, dashes
-            let clean = line.replace(/[\s|\/\-]+/g, '');
-            
-            // 2. Split by digits sequence
-            let parts = clean.match(/\d+/g);
-            if (!parts) return null;
-
-            // 3. Identify PAN (first long sequence)
-            let panIndex = parts.findIndex(p => p.length > 10);
-            if (panIndex === -1) panIndex = 0; 
-
-            let pan = parts[panIndex];
-            let remaining = [...parts.slice(0, panIndex), ...parts.slice(panIndex + 1)];
-
-            // 4. Parse Date (MM, YY) and CVV
-            let month = "";
-            let year = "";
-            let cvv = "";
-
-            let mmIdx = remaining.findIndex(p => p.length === 2 && parseInt(p) >= 1 && parseInt(p) <= 12);
-            if (mmIdx !== -1) {
-                month = remaining[mmIdx];
-                remaining.splice(mmIdx, 1);
-            }
-
-            let yyIdx = remaining.findIndex(p => p.length === 4 && parseInt(p) > 2000);
-            if (yyIdx === -1) {
-                yyIdx = remaining.findIndex(p => p.length === 2 && parseInt(p) < 100);
-            }
-            
-            if (yyIdx !== -1) {
-                let rawYear = remaining[yyIdx];
-                if (rawYear.length === 2) {
-                    year = (parseInt(rawYear) < 50) ? "20" + rawYear : "19" + rawYear;
-                } else {
-                    year = rawYear;
-                }
-                remaining.splice(yyIdx, 1);
-            }
-
-            if (remaining.length > 0) {
-                cvv = remaining[remaining.length - 1];
-                if (cvv.length > 4) cvv = cvv.substring(0, 4);
-            }
-
-            let normalized = `${pan}|${month.padStart(2, '0')}||${year}|${cvv}`;
-            
-            if (!month || !year) return { raw: line, pipe: normalized, valid: false };
-            return { raw: line, pipe: normalized, valid: true };
+        // Utility: Show Toast
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
         }
 
-        // Utility: Get Card Brand Icon & Name
-        function getCardBrand(pan) {
-            // Use card-validator if available, otherwise manual regex
-            try {
-                const result = cardValidator.number(pan);
-                if (result.isPotentiallyValid || result.isValid) {
-                    return {
-                        brand: result.cardType,
-                        icon: getBrandIcon(result.cardType)
-                    };
-                }
-            } catch (e) {
-                // Fallback to regex
-            }
-            
-            // Manual Regex Fallback
-            const regex = {
-                visa: /^4/,
-                mastercard: /^5[1-5]/,
-                amex: /^3[47]/,
-                discover: /^6(?:011|5)/,
-                diners: /^3(?:0[0-5]|[68])/,
-                jcb: /^(?:2131|1800|35)/
-            };
-
-            for (const [brand, pattern] of Object.entries(regex)) {
-                if (pattern.test(pan)) {
-                    return {
-                        brand: brand,
-                        icon: getBrandIcon(brand)
-                    };
-                }
-            }
-            return { brand: 'Unknown', icon: '<i class="fa-solid fa-credit-card brand-icon brand-unknown"></i>' };
+        // Utility: Show/Hide Loader
+        function setLoading(isLoading) {
+            loader.style.display = isLoading ? 'flex' : 'none';
         }
 
-        function getBrandIcon(brand) {
-            const icons = {
-                'Visa': '<i class="fa-brands fa-cc-visa brand-icon brand-visa"></i>',
-                'Mastercard': '<i class="fa-brands fa-cc-mastercard brand-icon brand-mastercard"></i>',
-                'American Express': '<i class="fa-brands fa-cc-amex brand-icon brand-amex"></i>',
-                'Discover': '<i class="fa-brands fa-cc-discover brand-icon brand-discover"></i>',
-                'Diners Club': '<i class="fa-solid fa-credit-card brand-icon brand-diners"></i>',
-                'JCB': '<i class="fa-brands fa-cc-jcb brand-icon brand-jcb"></i>',
-                'Unknown': '<i class="fa-solid fa-credit-card brand-icon brand-unknown"></i>'
-            };
-            return icons[brand] || icons['Unknown'];
-        }
+        // Utility: Format Result Card
+        function createResultCard(bin, data, isLuhnValid) {
+            const card = document.createElement('div');
+            card.className = 'result-card';
 
-        function clearInput() {
-            document.getElementById('inputData').value = '';
-            updateCardCount();
-        }
+            // Determine status
+            const statusClass = isLuhnValid ? 'status-valid' : 'status-invalid';
+            const statusText = isLuhnValid ? 'VALID Luhn' : 'INVALID Luhn';
 
-        function updateCardCount() {
-            const input = document.getElementById('inputData').value.trim();
-            const count = input ? input.split(/\n/).filter(l => l.trim()).length : 0;
-            document.getElementById('card-count').innerText = `${count} cards loaded`;
-        }
+            // Handle missing data gracefully
+            const scheme = data?.card?.scheme || 'Unknown';
+            const type = data?.card?.type || 'Unknown';
+            const issuer = data?.issuer?.name || 'Unknown Issuer';
+            const country = data?.country?.name || 'Unknown Country';
+            const currency = data?.country?.currency || 'N/A';
 
-        document.getElementById('inputData').addEventListener('input', updateCardCount);
-
-        async function startMassCheck() {
-            if (isProcessing) return;
-            
-            const input = document.getElementById('inputData').value.trim();
-            if (!input) {
-                showToast("No cards to check!", false);
-                return;
-            }
-
-            const lines = input.split(/\n/).filter(l => l.trim().length > 0);
-            
-            const parsedCards = lines.map((line, idx) => {
-                const p = parseCard(line);
-                return {
-                    id: idx + 1,
-                    raw: line.trim(),
-                    parsed: p
-                };
-            });
-
-            if (parsedCards.length === 0) {
-                showToast("No valid data found.", false);
-                return;
-            }
-
-            log(`Parsed ${parsedCards.length} cards. Starting check...`, 'log-info');
-            
-            isProcessing = true;
-            document.getElementById('startBtn').disabled = true;
-            document.getElementById('startBtn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
-            document.getElementById('status-text').innerText = "PROCESSING";
-            document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-blue-500 live-status";
-
-            results = []; 
-            document.getElementById('resultsBody').innerHTML = '';
-
-            const batchSize = 5; 
-            for (let i = 0; i < parsedCards.length; i += batchSize) {
-                const batch = parsedCards.slice(i, i + batchSize);
-                await processBatch(batch);
-            }
-
-            finishProcessing();
-        }
-
-        async function processBatch(batch) {
-            for (let cardObj of batch) {
-                await checkSingleCard(cardObj);
-                await new Promise(r => setTimeout(r, 20)); 
-            }
-        }
-
-        async function checkSingleCard(cardObj) {
-            // Simulate API Call (Randomize for demo)
-            await new Promise(r => setTimeout(r, Math.random() * 50 + 50)); 
-
-            // Randomize Results for Demo
-            const rand = Math.random();
-            let status, message, vbvCheck;
-
-            if (rand < 0.35) {
-                status = 'LIVE';
-                message = 'Approved';
-                vbvCheck = Math.random() > 0.4 ? 'No' : 'Yes';
-            } else if (rand < 0.55) {
-                status = 'VBV';
-                message = 'VBV Required';
-                vbvCheck = 'Yes';
-            } else {
-                status = 'DEAD';
-                const errors = ['Insufficient Funds', 'Do Not Honor', 'Invalid Account', 'Lost Card', 'Stolen Card', 'Processing Error'];
-                message = errors[Math.floor(Math.random() * errors.length)];
-                vbvCheck = 'N/A';
-            }
-
-            // Detect Brand
-            const brandInfo = getCardBrand(cardObj.parsed.pipe.split('|')[0]);
-
-            const result = {
-                id: cardObj.id,
-                raw: cardObj.raw,
-                pipe: cardObj.parsed.pipe,
-                status: status,
-                message: message,
-                vbv: vbvCheck,
-                brand: brandInfo
-            };
-
-            results.push(result);
-            addResultToTable(result);
-            updateCounts();
-        }
-
-        function addResultToTable(result) {
-            const tbody = document.getElementById('resultsBody');
-            const tr = document.createElement('tr');
-            tr.className = 'border-b border-slate-800 hover:bg-slate-800/30 transition';
-            
-            let statusClass = '';
-            let statusIcon = '';
-            if (result.status === 'LIVE') {
-                statusClass = 'text-emerald-400 bg-emerald-900/20 border-emerald-900/50';
-                statusIcon = '<i class="fa-solid fa-check"></i>';
-            } else if (result.status === 'VBV') {
-                statusClass = 'text-blue-400 bg-blue-900/20 border-blue-900/50';
-                statusIcon = '<i class="fa-solid fa-shield-halved"></i>';
-            } else {
-                statusClass = 'text-red-400 bg-red-900/20 border-red-900/50';
-                statusIcon = '<i class="fa-solid fa-xmark"></i>';
-            }
-
-            tr.innerHTML = `
-                <td class="p-3 text-slate-500">${result.id}</td>
-                <td class="p-3 text-slate-400">${result.brand.icon}</td>
-                <td class="p-3 text-slate-400 truncate max-w-xs" title="${result.raw}">${result.raw}</td>
-                <td class="p-3 text-slate-200 font-mono break-all">${result.pipe}</td>
-                <td class="p-3">
-                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold border ${statusClass}">
-                        ${statusIcon} ${result.status}
-                    </span>
-                </td>
-                <td class="p-3 text-slate-400">${result.message} ${result.vbv !== 'N/A' ? `<span class="text-blue-400 text-xs">(${result.vbv})</span>` : ''}</td>
-                <td class="p-3 flex justify-center gap-2">
-                    <button onclick="copyText('${escapeHtml(result.pipe)}')" class="btn-copy bg-slate-700 hover:bg-slate-600 text-slate-200" title="Copy Pipe">
-                        <i class="fa-solid fa-copy"></i>
-                    </button>
-                    <button onclick="copyText('${escapeHtml(result.raw)} ${result.pipe}')" class="btn-copy bg-slate-700 hover:bg-slate-600 text-slate-200" title="Copy Full Row">
-                        <i class="fa-solid fa-list"></i>
-                    </button>
-                </td>
+            card.innerHTML = `
+                <div class="result-header">
+                    <span class="result-bin">${bin}</span>
+                    <span class="result-status ${statusClass}">${statusText}</span>
+                </div>
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Scheme</span>
+                        <span class="detail-value">${scheme}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Type</span>
+                        <span class="detail-value">${type}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Issuer</span>
+                        <span class="detail-value">${issuer}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Country</span>
+                        <span class="detail-value">${country}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Currency</span>
+                        <span class="detail-value">${currency}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Length</span>
+                        <span class="detail-value">${data?.card?.number_length || 'N/A'}</span>
+                    </div>
+                </div>
+                <div style="margin-top:8px; display:flex; justify-content:flex-end;">
+                    <button style="background:none; border:1px solid #555; color:#888; padding:2px 8px; border-radius:4px; font-size:0.7rem; cursor:pointer;" onclick="copyBin('${bin}')">Copy</button>
+                </div>
             `;
-            tbody.appendChild(tr);
-            
-            const tableContainer = document.querySelector('.table-container');
-            if (tableContainer.scrollHeight - tableContainer.scrollTop - tableContainer.clientHeight < 100) {
-                tableContainer.scrollTop = tableContainer.scrollHeight;
+            return card;
+        }
+
+        // Core: Fetch Logic
+        async function fetchBinData(bin) {
+            try {
+                // Try standard fetch first. 
+                // Note: If the API is strictly Cloudflare Turnstile protected without a proxy, 
+                // this might return HTML. We handle that below.
+                const response = await fetch(`${API_BASE}${bin}`);
+                
+                // Check if response is HTML (Cloudflare Challenge)
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('text/html')) {
+                    const text = await response.text();
+                    // Attempt to parse the <pre> tag which contains the JSON in the HTML body
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(text, 'text/html');
+                    const pre = doc.querySelector('pre#result');
+                    if (pre && pre.innerText) {
+                        return JSON.parse(pre.innerText);
+                    }
+                    return { valid: false, message: 'Cloudflare Challenge or Invalid BIN' };
+                }
+
+                // If it's JSON directly
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error("Fetch error:", error);
+                return { valid: false, message: 'Network Error' };
             }
         }
 
-        function finishProcessing() {
-            isProcessing = false;
-            document.getElementById('startBtn').disabled = false;
-            document.getElementById('startBtn').innerHTML = '<i class="fa-solid fa-bolt"></i> START MASS CHECK';
-            document.getElementById('status-text').innerText = "DONE";
-            document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-emerald-500 live-status";
-            showToast(`Done! ${results.length} cards checked.`, true);
+        // Luhn Algorithm Implementation
+        function luhnCheck(num) {
+            if (typeof num === 'string') {
+                num = num.replace(/\D/g, '');
+            }
+            let arr = (num + '').split('').map(function (x) { return parseInt(x); });
+            let last = arr.length - 1;
+            let sum = 0;
+            for (let i = arr.length; i > 0; i--) {
+                let c = arr[--i];
+                if (i % 2 === last % 2) {
+                    c *= 2;
+                    if (c > 9) c -= 9;
+                }
+                sum += c;
+            }
+            return (sum % 10) === 0;
         }
 
-        function copyText(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                showToast("Copied to clipboard!", true);
-            }).catch(err => {
-                console.error('Failed to copy: ', err);
+        // Single Check Handler
+        async function checkSingleBin() {
+            const bin = singleInput.value.trim();
+            if (!bin) return showToast("Enter a BIN");
+
+            setLoading(true);
+            const result = await fetchBinData(bin);
+            setLoading(false);
+
+            const isValid = result.valid !== false && result.card?.luhn === true;
+            
+            // Clear previous single results if any (optional, keeping history is usually better)
+            // resultsContainer.innerHTML = ''; 
+            
+            const card = createResultCard(bin, result, isValid);
+            resultsContainer.prepend(card);
+            updateStats(1, isValid ? 1 : 0);
+        }
+
+        // Bulk Check Handler
+        async function checkBulk() {
+            const rawInput = bulkInput.value;
+            const bins = rawInput.split(/[\n,]+/).map(b => b.trim()).filter(b => b.length > 0);
+
+            if (bins.length === 0) return showToast("No bins entered");
+
+            setLoading(true);
+            resultsContainer.innerHTML = ''; // Clear previous results
+            updateStats(0, 0);
+
+            let validCount = 0;
+            let totalCount = 0;
+
+            // Process sequentially to avoid rate limiting issues with free API
+            for (const bin of bins) {
+                const result = await fetchBinData(bin);
+                const isValid = result.valid !== false && result.card?.luhn === true;
+                
+                if (isValid) validCount++;
+                totalCount++;
+
+                const card = createResultCard(bin, result, isValid);
+                resultsContainer.appendChild(card);
+                
+                // Scroll to bottom
+                window.scrollTo(0, document.body.scrollHeight);
+            }
+
+            setLoading(false);
+            updateStats(totalCount, validCount);
+            showToast(`Done: ${validCount}/${totalCount} Valid`);
+        }
+
+        // Stats Updater
+        function updateStats(total, valid) {
+            statsDisplay.textContent = `Checked: ${total} | Valid Luhn: ${valid} | Invalid: ${total - valid}`;
+        }
+
+        // Copy Helper
+        function copyBin(bin) {
+            navigator.clipboard.writeText(bin).then(() => {
+                showToast("BIN Copied!");
+            }).catch(() => {
+                showToast("Copy failed");
             });
         }
 
-        function copyColumn(type) {
-            let text = '';
-            if (type === 'pipes') {
-                text = results.map(r => r.pipe).join('\n');
-            } else if (type === 'lives') {
-                const lives = results.filter(r => r.status === 'LIVE');
-                if (lives.length === 0) {
-                    showToast("No live cards found!", false);
-                    return;
-                }
-                text = lives.map(r => r.pipe).join('\n');
-            } else if (type === 'vbvs') {
-                const vbvs = results.filter(r => r.vbv === 'Yes');
-                if (vbvs.length === 0) {
-                    showToast("No VBV cards found!", false);
-                    return;
-                }
-                text = vbvs.map(r => r.pipe).join('\n');
-            } else if (type === 'full') {
-                text = results.map(r => `${r.id},${r.raw},${r.pipe},${r.status},${r.message},VBV:${r.vbv}`).join('\n');
-            }
-            
-            if (text) {
-                navigator.clipboard.writeText(text);
-                showToast(`Copied ${type === 'lives' ? lives.length : type === 'vbvs' ? vbvs.length : results.length} items!`, true);
-            }
-        }
+        // Auto-format single input to uppercase
+        singleInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
+        });
 
-        function showToast(message, success) {
-            const x = document.getElementById("toast");
-            x.innerText = message;
-            x.className = success ? "show" : "show";
-            if (!success) x.style.backgroundColor = "#ef4444";
-            else x.style.backgroundColor = "#10b981";
-            
-            setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
-        }
-
-        function log(message, className) {
-            console.log(`[${new Date().toLocaleTimeString()}] ${message}`);
-        }
-
-        function escapeHtml(text) {
-            return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        }
     </script>
 </body>
 </html>
-
