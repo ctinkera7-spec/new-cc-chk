@@ -1,196 +1,166 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEON-CARD VALIDATOR</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body {
-      background: #0f0f23;
-      color: #e2e8f0;
-      font-family: 'Segoe UI', sans-serif;
-    }
-    .card {
-      transition: all 0.3s ease;
-      border: 2px solid transparent;
-      background: rgba(30, 30, 60, 0.7);
-      backdrop-filter: blur(10px);
-    }
-    .card.valid {
-      border-color: #10b981;
-      box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
-    }
-    .card.invalid {
-      border-color: #ef4444;
-      box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
-    }
-    .emoji {
-      font-size: 1.5rem;
-    }
-    .reason {
-      font-size: 0.8rem;
-      opacity: 0.9;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZORG👽's Luhn Checker</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #0a0a0a;
+            color: #0f0;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #f00;
+            text-shadow: 0 0 5px #f00;
+            margin-bottom: 30px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #111;
+            padding: 20px;
+            border: 1px solid #f00;
+            border-radius: 5px;
+        }
+        input {
+            background: #1a1a1a;
+            color: #0f0;
+            border: 1px solid #f00;
+            padding: 12px;
+            font-size: 16px;
+            width: 100%;
+            box-sizing: border-box;
+            margin: 10px 0;
+        }
+        button {
+            background: #f00;
+            color: #000;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+            width: 100%;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #0f0;
+            color: #000;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            min-height: 24px;
+            padding: 10px;
+            border-radius: 3px;
+        }
+        .valid {
+            color: #0f0;
+            background: rgba(0, 255, 0, 0.1);
+        }
+        .invalid {
+            color: #f00;
+            background: rgba(255, 0, 0, 0.1);
+        }
+        .card-logos {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .card-logos img {
+            height: 30px;
+            opacity: 0.5;
+            transition: opacity 0.3s;
+        }
+        .card-logos img.active {
+            opacity: 1;
+        }
+    </style>
 </head>
-<body class="p-6">
-  <div class="max-w-6xl mx-auto">
-    <h1 class="text-4xl font-bold mb-8 text-center">NEON-CARD VALIDATOR</h1>
+<body>
+    <div class="container">
+        <h1>ZORG👽's Luhn Checker</h1>
+        <p>Enter a credit card number, IMEI, or any Luhn-validated string:</p>
+        <input type="text" id="inputNumber" placeholder="e.g. 4111 1111 1111 1111" maxlength="32">
+        <button onclick="checkLuhn()">VALIDATE</button>
+        <div id="result"></div>
 
-    <!-- Filter Controls -->
-    <div class="mb-6 flex justify-center">
-      <select id="filter" class="bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white">
-        <option value="all">All Cards</option>
-        <option value="valid">Valid Cards Only</option>
-        <option value="invalid">Invalid Cards Only</option>
-      </select>
+        <div class="card-logos">
+            <img id="visa" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCAzMiI+PHBhdGggZmlsbD0iIzAwNTFBNSIgZD0iTTAgMGg0OHYzMkgwVjB6bTQgMGgxMnYyNEg0VjB6bTggMGgxMnYyNEg4VjB6bTEyIDBoMTJ2MjRIMjBWMHoiLz48L3N2Zz4=" alt="Visa">
+            <img id="mastercard" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCAzMiI+PGNpcmNsZSBmaWxsPSIjRUIwMDI2IiBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiLz48Y2lyY2xlIGZpbGw9IiNGRjU5MDAiIGN4PSIzMiIgY3k9IjE2IiByPSIxNiIvPjwvc3ZnPg==" alt="Mastercard">
+            <img id="amex" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCAzMiI+PHBhdGggZmlsbD0iIzAwN0JDQiIgZD0iTTAgMGg0OHYzMkgwVjB6bTQgMGgxMnYyNEg0VjB6bTggMGgxMnYyNEg4VjB6bTEyIDBoMjR2MjRIMTJWMHoiLz48L3N2Zz4=" alt="American Express">
+        </div>
     </div>
 
-    <!-- Cards Container -->
-    <div id="cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <!-- Cards will be injected here by JS -->
-    </div>
-  </div>
+    <script>
+        function checkLuhn() {
+            const input = document.getElementById('inputNumber').value.replace(/\s+/g, '');
+            const resultDiv = document.getElementById('result');
+            const visaLogo = document.getElementById('visa');
+            const mastercardLogo = document.getElementById('mastercard');
+            const amexLogo = document.getElementById('amex');
 
-  <script>
-    // ========== DATA PROCESSING ==========
-    // Hypothetical bank/emoji/state database
-    const bankData = {
-      "CHASE": { emoji: "🏛️", state: "NY", name: "Chase Bank" },
-      "BOFA": { emoji: "🏦", state: "NC", name: "Bank of America" },
-      "WELLS FARGO": { emoji: "🐎", state: "CA", name: "Wells Fargo" },
-      "CITI": { emoji: "🌆", state: "NY", name: "Citi Bank" },
-      "USBANK": { emoji: "🏔️", state: "MN", name: "US Bank" },
-      "RBC": { emoji: "🍁", state: "ON", name: "Royal Bank of Canada" },
-      "TD": { emoji: "🍁", state: "ON", name: "TD Bank" },
-      "UNKNOWN": { emoji: "💳", state: "N/A", name: "Unknown Bank" }
-    };
+            // Reset logos
+            visaLogo.classList.remove('active');
+            mastercardLogo.classList.remove('active');
+            amexLogo.classList.remove('active');
 
-    // Sample pipe-formatted data (replace with your actual data)
-    const rawData = `
-      VISA|4111111111111111|USA|CHASE
-      MASTERCARD|5555555555554444|USA|BOFA
-      AMEX|378282246310005|USA|WELLS FARGO
-      DISCOVER|6011111111111117|USA|CITI
-      VISA|1234567890123456|USA|USBANK
-      MASTERCARD|5105105105105100|CANADA|RBC
-      VISA|4222222222222|USA|TD
-      INVALID|1111111111111111|USA|UNKNOWN
-    `;
+            if (!input || !/^\d+$/.test(input)) {
+                resultDiv.textContent = "INVALID: Only numbers allowed.";
+                resultDiv.className = "invalid";
+                return;
+            }
 
-    // ========== VALIDATION ENGINE ==========
-    const validateCard = (card) => {
-      // 1. Network Check
-      const validNetworks = ["VISA", "MASTERCARD", "AMEX", "DISCOVER"];
-      if (!validNetworks.includes(card.network)) {
-        return {
-          status: "invalid",
-          reason: `❌ Invalid network: "${card.network}". Must be one of: ${validNetworks.join(", ")}.`
-        };
-      }
+            // Detect card type
+            let cardType = "Unknown";
+            if (/^4/.test(input)) {
+                cardType = "Visa";
+                visaLogo.classList.add('active');
+            } else if (/^5[1-5]/.test(input)) {
+                cardType = "Mastercard";
+                mastercardLogo.classList.add('active');
+            } else if (/^3[47]/.test(input)) {
+                cardType = "American Express";
+                amexLogo.classList.add('active');
+            }
 
-      // 2. Luhn Algorithm (Credit Card Checksum)
-      const luhnCheck = (num) => {
-        const digits = num.split("").map(Number);
-        const sum = digits.reverse().reduce((acc, digit, index) => {
-          if (index % 2 === 1) digit *= 2;
-          if (digit > 9) digit -= 9;
-          return acc + digit;
-        }, 0);
-        return sum % 10 === 0;
-      };
-      if (!luhnCheck(card.number)) {
-        return {
-          status: "invalid",
-          reason: "❌ Invalid card number: Failed Luhn checksum."
-        };
-      }
+            // Luhn Algorithm
+            let sum = 0;
+            let shouldDouble = false;
 
-      // 3. Country/Bank Match (Hypothetical Rule)
-      const countryBankRules = {
-        USA: ["CHASE", "BOFA", "WELLS FARGO", "CITI", "USBANK"],
-        CANADA: ["RBC", "TD"]
-      };
-      if (!countryBankRules[card.country]?.includes(card.bank)) {
-        return {
-          status: "invalid",
-          reason: `❌ Bank "${card.bank}" is not valid for country "${card.country}".`
-        };
-      }
+            for (let i = input.length - 1; i >= 0; i--) {
+                let digit = parseInt(input.charAt(i), 10);
 
-      // Success
-      return {
-        status: "valid",
-        reason: "✅ Card is valid: Network, checksum, and bank/country match confirmed."
-      };
-    };
+                if (shouldDouble) {
+                    digit *= 2;
+                    if (digit > 9) {
+                        digit = (digit % 10) + 1;
+                    }
+                }
 
-    // ========== DATA PARSING ==========
-    const parsePipeData = (data) => {
-      return data.trim().split("\n").map(line => {
-        // Handle all pipe formats (with/without spaces, extra pipes)
-        const parts = line.split("|").map(part => part.trim()).filter(part => part);
-        return {
-          network: parts[0] || "UNKNOWN",
-          number: parts[1] || "0000000000000000",
-          country: parts[2] || "UNKNOWN",
-          bank: parts[3] || "UNKNOWN"
-        };
-      });
-    };
+                sum += digit;
+                shouldDouble = !shouldDouble;
+            }
 
-    // ========== CARD RENDERING ==========
-    const renderCards = (cards) => {
-      const container = document.getElementById("cards-container");
-      container.innerHTML = "";
+            const isValid = (sum % 10) === 0;
+            resultDiv.textContent = isValid
+                ? `✓ VALID ${cardType} (Luhn-approved)`
+                : `✗ INVALID (Luhn-rejected)`;
+            resultDiv.className = isValid ? "valid" : "invalid";
+        }
 
-      cards.forEach(card => {
-        const bankInfo = bankData[card.bank] || bankData.UNKNOWN;
-        const validation = validateCard(card);
-
-        const cardElement = document.createElement("div");
-        cardElement.className = `card rounded-xl p-6 ${validation.status}`;
-        cardElement.innerHTML = `
-          <div class="flex items-center mb-4">
-            <span class="emoji mr-3">${bankInfo.emoji}</span>
-            <div>
-              <h3 class="text-xl font-bold">${card.network}</h3>
-              <p class="text-gray-400">${bankInfo.name} (${bankInfo.state})</p>
-            </div>
-          </div>
-          <div class="mb-4">
-            <p class="text-2xl font-mono tracking-wider">${card.number.replace(/\d{4}(?=\d)/g, '$& ')}</p>
-          </div>
-          <div class="border-t border-gray-600 pt-4">
-            <p class="font-bold ${validation.status === 'valid' ? 'text-green-400' : 'text-red-400'}">
-              ${validation.status.toUpperCase()}
-            </p>
-            <p class="reason mt-1">${validation.reason}</p>
-          </div>
-        `;
-        container.appendChild(cardElement);
-      });
-    };
-
-    // ========== FILTER SYSTEM ==========
-    document.getElementById("filter").addEventListener("change", (e) => {
-      const filter = e.target.value;
-      const cards = parsePipeData(rawData);
-
-      if (filter === "valid") {
-        renderCards(cards.filter(card => validateCard(card).status === "valid"));
-      } else if (filter === "invalid") {
-        renderCards(cards.filter(card => validateCard(card).status === "invalid"));
-      } else {
-        renderCards(cards);
-      }
-    });
-
-    // ========== INITIAL RENDER ==========
-    document.addEventListener("DOMContentLoaded", () => {
-      renderCards(parsePipeData(rawData));
-    });
-  </script>
+        // Allow Enter key to trigger validation
+        document.getElementById('inputNumber').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkLuhn();
+            }
+        });
+    </script>
 </body>
 </html>
