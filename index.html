@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZORG-Ω Bulk Luhn Checker</title>
+  <title>ZORG-Ω Pipe-Formatted Luhn Checker</title>
   <style>
     body {
       font-family: 'Arial', sans-serif;
@@ -13,7 +13,7 @@
       padding: 20px;
     }
     .container {
-      max-width: 800px;
+      max-width: 1000px;
       margin: 0 auto;
       background-color: #1e1e1e;
       padding: 20px;
@@ -66,6 +66,15 @@
     #results tr:nth-child(even) {
       background-color: #2a2a2a;
     }
+    .valid {
+      color: #00ff00;
+    }
+    .invalid {
+      color: #ff0000;
+    }
+    .expired {
+      color: #ffcc00;
+    }
     #progress {
       width: 100%;
       height: 20px;
@@ -80,21 +89,15 @@
       width: 0%;
       transition: width 0.3s;
     }
-    .valid {
-      color: #00ff00;
-    }
-    .invalid {
-      color: #ff0000;
-    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>ZORG-Ω Bulk Luhn Checker</h1>
-    <p>Enter credit card numbers (one per line) for bulk validation:</p>
-    <textarea id="ccInput" placeholder="4111111111111111
-5500000000000004
-340000000000009"></textarea>
+    <h1>ZORG-Ω Pipe-Formatted Luhn Checker</h1>
+    <p>Enter pipe-formatted CC data (one per line): <code>NUMBER|MM|YYYY|CVV</code></p>
+    <textarea id="ccInput" placeholder="4867864092133670|10|2027|349
+4031631179624769|05|2025|475
+5500000000000004|12|2030|123"></textarea>
     <button id="validateBtn">Validate</button>
     <div id="progress">
       <div id="progress-bar"></div>
@@ -102,8 +105,9 @@
     <table id="results">
       <thead>
         <tr>
-          <th>Card Number</th>
-          <th>Status</th>
+          <th>Full Entry</th>
+          <th>Luhn Status</th>
+          <th>Expiry Status</th>
         </tr>
       </thead>
       <tbody id="resultsBody"></tbody>
@@ -134,10 +138,24 @@
       return sum % 10 === 0;
     }
 
+    // Expiry Checker Function
+    function isExpired(month, year) {
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth() + 1;
+
+      const expiryYear = parseInt(year, 10);
+      const expiryMonth = parseInt(month, 10);
+
+      if (expiryYear < currentYear) return true;
+      if (expiryYear === currentYear && expiryMonth < currentMonth) return true;
+      return false;
+    }
+
     // Bulk Validator
     async function bulkValidate() {
       const input = document.getElementById('ccInput').value.trim();
-      const ccNumbers = input.split('\n').map(num => num.trim()).filter(num => num);
+      const lines = input.split('\n').map(line => line.trim()).filter(line => line);
       const resultsBody = document.getElementById('resultsBody');
       const progressBar = document.getElementById('progress-bar');
       const validateBtn = document.getElementById('validateBtn');
@@ -146,37 +164,46 @@
       validateBtn.disabled = true;
       progressBar.style.width = '0%';
 
-      if (ccNumbers.length === 0) {
-        alert('No credit card numbers provided.');
+      if (lines.length === 0) {
+        alert('No data provided.');
         validateBtn.disabled = false;
         return;
       }
 
       const batchSize = 100;
-      const total = ccNumbers.length;
+      const total = lines.length;
       let processed = 0;
 
       for (let i = 0; i < total; i += batchSize) {
-        const batch = ccNumbers.slice(i, i + batchSize);
-        const batchResults = batch.map(num => ({
-          number: num,
-          isValid: luhnCheck(num)
-        }));
+        const batch = lines.slice(i, i + batchSize);
 
-        // Update results table
-        batchResults.forEach(result => {
+        for (const line of batch) {
+          const parts = line.split('|');
+          const number = parts[0] || '';
+          const month = parts[1] || '';
+          const year = parts[2] || '';
+          const cvv = parts[3] || '';
+
+          const isLuhnValid = luhnCheck(number);
+          const isExpiryValid = !isExpired(month, year);
+
           const row = document.createElement('tr');
-          const numberCell = document.createElement('td');
-          const statusCell = document.createElement('td');
+          const entryCell = document.createElement('td');
+          const luhnCell = document.createElement('td');
+          const expiryCell = document.createElement('td');
 
-          numberCell.textContent = result.number;
-          statusCell.textContent = result.isValid ? 'Valid' : 'Invalid';
-          statusCell.className = result.isValid ? 'valid' : 'invalid';
+          entryCell.textContent = line;
+          luhnCell.textContent = isLuhnValid ? 'Valid' : 'Invalid';
+          luhnCell.className = isLuhnValid ? 'valid' : 'invalid';
 
-          row.appendChild(numberCell);
-          row.appendChild(statusCell);
+          expiryCell.textContent = isExpiryValid ? 'Valid' : 'Expired';
+          expiryCell.className = isExpiryValid ? 'valid' : 'expired';
+
+          row.appendChild(entryCell);
+          row.appendChild(luhnCell);
+          row.appendChild(expiryCell);
           resultsBody.appendChild(row);
-        });
+        }
 
         processed += batch.length;
         progressBar.style.width = `${(processed / total) * 100}%`;
