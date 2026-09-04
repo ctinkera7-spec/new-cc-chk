@@ -1,166 +1,233 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZORG👽's Luhn Checker</title>
-    <style>
-        body {
-            font-family: 'Courier New', monospace;
-            background-color: #0a0a0a;
-            color: #0f0;
-            text-align: center;
-            padding: 20px;
-            margin: 0;
-            line-height: 1.6;
-        }
-        h1 {
-            color: #f00;
-            text-shadow: 0 0 5px #f00;
-            margin-bottom: 30px;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #111;
-            padding: 20px;
-            border: 1px solid #f00;
-            border-radius: 5px;
-        }
-        input {
-            background: #1a1a1a;
-            color: #0f0;
-            border: 1px solid #f00;
-            padding: 12px;
-            font-size: 16px;
-            width: 100%;
-            box-sizing: border-box;
-            margin: 10px 0;
-        }
-        button {
-            background: #f00;
-            color: #000;
-            border: none;
-            padding: 12px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: 0.3s;
-            width: 100%;
-            font-weight: bold;
-        }
-        button:hover {
-            background: #0f0;
-            color: #000;
-        }
-        #result {
-            margin-top: 20px;
-            font-size: 18px;
-            min-height: 24px;
-            padding: 10px;
-            border-radius: 3px;
-        }
-        .valid {
-            color: #0f0;
-            background: rgba(0, 255, 0, 0.1);
-        }
-        .invalid {
-            color: #f00;
-            background: rgba(255, 0, 0, 0.1);
-        }
-        .card-logos {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin: 20px 0;
-        }
-        .card-logos img {
-            height: 30px;
-            opacity: 0.5;
-            transition: opacity 0.3s;
-        }
-        .card-logos img.active {
-            opacity: 1;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZORG-Ω Pipe-Formatted Luhn Checker</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #0f0f0f;
+      color: #00ff00;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background-color: #1e1e1e;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+    }
+    h1 {
+      text-align: center;
+      color: #00ff00;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      background-color: #2a2a2a;
+      color: #00ff00;
+      border: 1px solid #00ff00;
+      border-radius: 5px;
+      padding: 10px;
+      margin-bottom: 10px;
+      font-family: monospace;
+    }
+    button {
+      background-color: #00ff00;
+      color: #0f0f0f;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background-color: #00cc00;
+    }
+    #results {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    #results th, #results td {
+      border: 1px solid #00ff00;
+      padding: 8px;
+      text-align: center;
+    }
+    #results th {
+      background-color: #00ff00;
+      color: #0f0f0f;
+    }
+    #results tr:nth-child(even) {
+      background-color: #2a2a2a;
+    }
+    #progress {
+      width: 100%;
+      height: 20px;
+      background-color: #2a2a2a;
+      border-radius: 5px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    #progress-bar {
+      height: 100%;
+      background-color: #00ff00;
+      width: 0%;
+      transition: width 0.3s;
+    }
+    .valid {
+      color: #00ff00;
+    }
+    .invalid {
+      color: #ff0000;
+    }
+    .expired {
+      color: #ff6600;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>ZORG👽's Luhn Checker</h1>
-        <p>Enter a credit card number, IMEI, or any Luhn-validated string:</p>
-        <input type="text" id="inputNumber" placeholder="e.g. 4111 1111 1111 1111" maxlength="32">
-        <button onclick="checkLuhn()">VALIDATE</button>
-        <div id="result"></div>
-
-        <div class="card-logos">
-            <img id="visa" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCAzMiI+PHBhdGggZmlsbD0iIzAwNTFBNSIgZD0iTTAgMGg0OHYzMkgwVjB6bTQgMGgxMnYyNEg0VjB6bTggMGgxMnYyNEg4VjB6bTEyIDBoMTJ2MjRIMjBWMHoiLz48L3N2Zz4=" alt="Visa">
-            <img id="mastercard" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCAzMiI+PGNpcmNsZSBmaWxsPSIjRUIwMDI2IiBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiLz48Y2lyY2xlIGZpbGw9IiNGRjU5MDAiIGN4PSIzMiIgY3k9IjE2IiByPSIxNiIvPjwvc3ZnPg==" alt="Mastercard">
-            <img id="amex" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCAzMiI+PHBhdGggZmlsbD0iIzAwN0JDQiIgZD0iTTAgMGg0OHYzMkgwVjB6bTQgMGgxMnYyNEg0VjB6bTggMGgxMnYyNEg4VjB6bTEyIDBoMjR2MjRIMTJWMHoiLz48L3N2Zz4=" alt="American Express">
-        </div>
+  <div class="container">
+    <h1>ZORG-Ω Pipe-Formatted Luhn Checker</h1>
+    <p>Enter credit card data in pipe format (one per line): <code>NUMBER|MM|YYYY|CVV</code></p>
+    <textarea id="ccInput" placeholder="4867864092133670|10|2027|349
+4031631179624769|05|2031|475
+5500000000000004|12|2025|123"></textarea>
+    <button id="validateBtn">Validate</button>
+    <div id="progress">
+      <div id="progress-bar"></div>
     </div>
+    <table id="results">
+      <thead>
+        <tr>
+          <th>Card Data</th>
+          <th>Luhn Status</th>
+          <th>Expiry Status</th>
+        </tr>
+      </thead>
+      <tbody id="resultsBody"></tbody>
+    </table>
+  </div>
 
-    <script>
-        function checkLuhn() {
-            const input = document.getElementById('inputNumber').value.replace(/\s+/g, '');
-            const resultDiv = document.getElementById('result');
-            const visaLogo = document.getElementById('visa');
-            const mastercardLogo = document.getElementById('mastercard');
-            const amexLogo = document.getElementById('amex');
+  <script>
+    // Luhn Checker Function
+    function luhnCheck(cardNumber) {
+      const cleaned = cardNumber.replace(/\D/g, '');
+      if (!cleaned || cleaned.length < 13 || cleaned.length > 19) return false;
 
-            // Reset logos
-            visaLogo.classList.remove('active');
-            mastercardLogo.classList.remove('active');
-            amexLogo.classList.remove('active');
+      let sum = 0;
+      let shouldDouble = false;
 
-            if (!input || !/^\d+$/.test(input)) {
-                resultDiv.textContent = "INVALID: Only numbers allowed.";
-                resultDiv.className = "invalid";
-                return;
-            }
+      for (let i = cleaned.length - 1; i >= 0; i--) {
+        let digit = parseInt(cleaned.charAt(i), 10);
 
-            // Detect card type
-            let cardType = "Unknown";
-            if (/^4/.test(input)) {
-                cardType = "Visa";
-                visaLogo.classList.add('active');
-            } else if (/^5[1-5]/.test(input)) {
-                cardType = "Mastercard";
-                mastercardLogo.classList.add('active');
-            } else if (/^3[47]/.test(input)) {
-                cardType = "American Express";
-                amexLogo.classList.add('active');
-            }
-
-            // Luhn Algorithm
-            let sum = 0;
-            let shouldDouble = false;
-
-            for (let i = input.length - 1; i >= 0; i--) {
-                let digit = parseInt(input.charAt(i), 10);
-
-                if (shouldDouble) {
-                    digit *= 2;
-                    if (digit > 9) {
-                        digit = (digit % 10) + 1;
-                    }
-                }
-
-                sum += digit;
-                shouldDouble = !shouldDouble;
-            }
-
-            const isValid = (sum % 10) === 0;
-            resultDiv.textContent = isValid
-                ? `✓ VALID ${cardType} (Luhn-approved)`
-                : `✗ INVALID (Luhn-rejected)`;
-            resultDiv.className = isValid ? "valid" : "invalid";
+        if (shouldDouble) {
+          digit *= 2;
+          if (digit > 9) digit = (digit % 10) + 1;
         }
 
-        // Allow Enter key to trigger validation
-        document.getElementById('inputNumber').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                checkLuhn();
-            }
+        sum += digit;
+        shouldDouble = !shouldDouble;
+      }
+
+      return sum % 10 === 0;
+    }
+
+    // Expiry Checker Function
+    function isExpired(month, year) {
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth() + 1;
+
+      if (year < currentYear) return true;
+      if (year === currentYear && month < currentMonth) return true;
+      return false;
+    }
+
+    // Bulk Validator
+    async function bulkValidate() {
+      const input = document.getElementById('ccInput').value.trim();
+      const ccLines = input.split('\n').map(line => line.trim()).filter(line => line);
+      const resultsBody = document.getElementById('resultsBody');
+      const progressBar = document.getElementById('progress-bar');
+      const validateBtn = document.getElementById('validateBtn');
+
+      resultsBody.innerHTML = '';
+      validateBtn.disabled = true;
+      progressBar.style.width = '0%';
+
+      if (ccLines.length === 0) {
+        alert('No credit card data provided.');
+        validateBtn.disabled = false;
+        return;
+      }
+
+      const batchSize = 100;
+      const total = ccLines.length;
+      let processed = 0;
+
+      for (let i = 0; i < total; i += batchSize) {
+        const batch = ccLines.slice(i, i + batchSize);
+        const batchResults = batch.map(line => {
+          const parts = line.split('|');
+          const number = parts[0] || '';
+          const month = parts[1] ? parseInt(parts[1], 10) : NaN;
+          const year = parts[2] ? parseInt(parts[2], 10) : NaN;
+          const cvv = parts[3] || '';
+
+          const isLuhnValid = luhnCheck(number);
+          const isExpiryValid = !isNaN(month) && !isNaN(year) ? !isExpired(month, year) : null;
+
+          return {
+            line,
+            isLuhnValid,
+            isExpiryValid
+          };
         });
-    </script>
+
+        // Update results table
+        batchResults.forEach(result => {
+          const row = document.createElement('tr');
+          const dataCell = document.createElement('td');
+          const luhnCell = document.createElement('td');
+          const expiryCell = document.createElement('td');
+
+          dataCell.textContent = result.line;
+
+          luhnCell.textContent = result.isLuhnValid ? 'Valid' : 'Invalid';
+          luhnCell.className = result.isLuhnValid ? 'valid' : 'invalid';
+
+          if (result.isExpiryValid === null) {
+            expiryCell.textContent = 'N/A';
+            expiryCell.className = '';
+          } else {
+            expiryCell.textContent = result.isExpiryValid ? 'Valid' : 'Expired';
+            expiryCell.className = result.isExpiryValid ? 'valid' : 'expired';
+          }
+
+          row.appendChild(dataCell);
+          row.appendChild(luhnCell);
+          row.appendChild(expiryCell);
+          resultsBody.appendChild(row);
+        });
+
+        processed += batch.length;
+        progressBar.style.width = `${(processed / total) * 100}%`;
+
+        // Yield control to avoid freezing the browser
+        await new Promise(resolve => setTimeout(resolve, 0));
+      }
+
+      validateBtn.disabled = false;
+    }
+
+    // Event Listener
+    document.getElementById('validateBtn').addEventListener('click', bulkValidate);
+  </script>
 </body>
 </html>
