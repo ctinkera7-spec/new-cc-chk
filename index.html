@@ -1,261 +1,280 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CC Luhn Checker</title>
-    <style>
-        :root {
-            --bg: #121212;
-            --surface: #1e1e1e;
-            --text: #e0e0e0;
-            --accent: #007aff;
-            --valid: #34c759;
-            --dead: #ff3b30;
-            --unknown: #ffcc00;
-            --border: #333;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CC Luhn Checker</title>
+<style>
+:root {
+--bg: #121212;
+--surface: #1e1e1e;
+--text: #e0e0e0;
+--accent: #007aff;
+--valid: #34c759;
+--dead: #ff3b30;
+--unknown: #ffcc00;
+--border: #333;
+}
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 15px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
+body {
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+background-color: var(--bg);
+color: var(--text);
+margin: 0;
+padding: 15px;
+box-sizing: border-box;
+display: flex;
+flex-direction: column;
+height: 100vh;
+}
 
-        h1 {
-            font-size: 1.2rem;
-            text-align: center;
-            margin: 0 0 10px 0;
-            color: var(--accent);
-        }
+h1 {
+font-size: 1.2rem;
+text-align: center;
+margin: 0 0 10px 0;
+color: var(--accent);
+}
 
-        .input-section {
-            flex: 0 0 auto;
-            margin-bottom: 10px;
-        }
+.input-section {
+flex: 0 0 auto;
+margin-bottom: 10px;
+}
 
-        textarea {
-            width: 100%;
-            height: 100px;
-            background-color: var(--surface);
-            color: var(--text);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 10px;
-            font-family: monospace;
-            font-size: 14px;
-            resize: vertical;
-            box-sizing: border-box;
-        }
+textarea {
+width: 100%;
+height: 100px;
+background-color: var(--surface);
+color: var(--text);
+border: 1px solid var(--border);
+border-radius: 8px;
+padding: 10px;
+font-family: monospace;
+font-size: 14px;
+resize: vertical;
+box-sizing: border-box;
+}
 
-        button#check-btn {
-            width: 100%;
-            padding: 12px;
-            margin-top: 10px;
-            background-color: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-        }
+button#check-btn {
+width: 100%;
+padding: 12px;
+margin-top: 10px;
+background-color: var(--accent);
+color: white;
+border: none;
+border-radius: 8px;
+font-size: 16px;
+font-weight: bold;
+cursor: pointer;
+}
 
-        button#check-btn:active {
-            opacity: 0.8;
-        }
+button#check-btn:active {
+opacity: 0.8;
+}
 
-        .output-container {
-            flex: 1;
-            display: flex;
-            gap: 10px;
-            min-height: 0; /* Important for flex scrolling */
-        }
+.output-container {
+flex: 1;
+display: flex;
+gap: 10px;
+min-height: 0; /* Important for flex scrolling */
+}
 
-        .col {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background-color: var(--surface);
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-        }
+.col {
+flex: 1;
+display: flex;
+flex-direction: column;
+background-color: var(--surface);
+border-radius: 8px;
+overflow: hidden;
+border: 1px solid var(--border);
+}
 
-        .col-header {
-            padding: 8px;
-            font-weight: bold;
-            font-size: 0.9rem;
-            text-align: center;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+.col-header {
+padding: 8px;
+font-weight: bold;
+font-size: 0.9rem;
+text-align: center;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
 
-        .col.valid .col-header { background-color: rgba(52, 199, 89, 0.2); color: var(--valid); }
-        .col.dead .col-header { background-color: rgba(255, 59, 48, 0.2); color: var(--dead); }
-        .col.unknown .col-header { background-color: rgba(255, 204, 0, 0.2); color: var(--unknown); }
+.col.valid .col-header { background-color: rgba(52, 199, 89, 0.2); color: var(--valid); }
+.col.dead .col-header { background-color: rgba(255, 59, 48, 0.2); color: var(--dead); }
+.col.unknown .col-header { background-color: rgba(255, 204, 0, 0.2); color: var(--unknown); }
 
-        .col-header span {
-            font-size: 0.8rem;
-            opacity: 0.8;
-        }
+.col-header span {
+font-size: 0.8rem;
+opacity: 0.8;
+}
 
-        .copy-btn {
-            background: none;
-            border: 1px solid currentColor;
-            color: inherit;
-            border-radius: 4px;
-            padding: 2px 6px;
-            font-size: 0.7rem;
-            cursor: pointer;
-        }
+.copy-btn {
+background: none;
+border: 1px solid currentColor;
+color: inherit;
+border-radius: 4px;
+padding: 2px 6px;
+font-size: 0.7rem;
+cursor: pointer;
+}
 
-        .col-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 5px;
-            font-family: monospace;
-            font-size: 12px;
-        }
+.col-content {
+flex: 1;
+overflow-y: auto;
+padding: 5px;
+font-family: monospace;
+font-size: 12px;
+}
 
-        .card-line {
-            padding: 4px 6px;
-            border-bottom: 1px solid #333;
-            word-break: break-all;
-        }
+.card-line {
+padding: 4px 6px;
+border-bottom: 1px solid #333;
+word-break: break-all;
+}
 
-        .card-line:last-child {
-            border-bottom: none;
-        }
+.card-line:last-child {
+border-bottom: none;
+}
 
-        /* Scrollbar styling */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--surface);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #555;
-            border-radius: 3px;
-        }
-    </style>
+/* Scrollbar styling */
+::-webkit-scrollbar {
+width: 6px;
+}
+::-webkit-scrollbar-track {
+background: var(--surface);
+}
+::-webkit-scrollbar-thumb {
+background: #555;
+border-radius: 3px;
+}
+</style>
 </head>
 <body>
+<h1>CC Checker</h1>
 
-    <h1>CC Luhn Checker</h1>
+<div class="input-section">
+<textarea id="input-cards" placeholder="Enter cards (number only or number|date|cvv)..."></textarea>
+<button id="check-btn">Check</button>
+</div>
 
-    <div class="input-section">
-        <textarea id="input-cc" placeholder="Paste CCs here (one per line)..."></textarea>
-        <button id="check-btn">CHECK</button>
-    </div>
+<div class="output-container">
+<div class="col valid">
+<div class="col-header">
+Valid <span id="valid-count">0</span>
+<button class="copy-btn" onclick="copyToClipboard('valid-cards')">Copy</button>
+</div>
+<div class="col-content" id="valid-cards"></div>
+</div>
 
-    <div class="output-container">
-        <!-- Valid -->
-        <div class="col valid">
-            <div class="col-header">
-                Valid
-                <button class="copy-btn" onclick="copyCol('out-valid')">Copy</button>
-            </div>
-            <div id="out-valid" class="col-content"></div>
-        </div>
+<div class="col dead">
+<div class="col-header">
+Dead <span id="dead-count">0</span>
+<button class="copy-btn" onclick="copyToClipboard('dead-cards')">Copy</button>
+</div>
+<div class="col-content" id="dead-cards"></div>
+</div>
 
-        <!-- Dead -->
-        <div class="col dead">
-            <div class="col-header">
-                Dead
-                <button class="copy-btn" onclick="copyCol('out-dead')">Copy</button>
-            </div>
-            <div id="out-dead" class="col-content"></div>
-        </div>
+<div class="col unknown">
+<div class="col-header">
+Unknown <span id="unknown-count">0</span>
+<button class="copy-btn" onclick="copyToClipboard('unknown-cards')">Copy</button>
+</div>
+<div class="col-content" id="unknown-cards"></div>
+</div>
+</div>
 
-        <!-- Unknown -->
-        <div class="col unknown">
-            <div class="col-header">
-                Unknown/Format
-                <button class="copy-btn" onclick="copyCol('out-unknown')">Copy</button>
-            </div>
-            <div id="out-unknown" class="col-content"></div>
-        </div>
-    </div>
+<script>
+function luhnCheck(cardNumber) {
+if (typeof cardNumber !== 'string') return false;
 
-    <script>
-        document.getElementById('check-btn').addEventListener('click', function() {
-            const input = document.getElementById('input-cc').value;
-            const lines = input.split(/\n/);
-            
-            const validEl = document.getElementById('out-valid');
-            const deadEl = document.getElementById('out-dead');
-            const unknownEl = document.getElementById('out-unknown');
+// Strip non-digits
+let digits = cardNumber.replace(/\D/g, '');
 
-            validEl.innerHTML = '';
-            deadEl.innerHTML = '';
-            unknownEl.innerHTML = '';
+if (digits.length < 13 || digits.length > 19) return false;
 
-            lines.forEach(line => {
-                let cc = line.trim();
-                if (!cc) return;
+let sum = 0;
+let isEven = false;
 
-                // Remove common separators for check, but keep original for display? 
-                // Usually people want to keep original format or just raw numbers.
-                // Let's work with raw digits for logic, but display what was pasted.
-                
-                const digitsOnly = cc.replace(/[^0-9]/g, '');
+for (let i = digits.length - 1; i >= 0; i--) {
+let digit = parseInt(digits[i], 10);
 
-                // Unknown criteria: 
-                // 1. Not purely digits after cleaning (contains letters etc)
-                // 2. Length < 12 or > 19 (standard CC range)
-                if (!/^\d+$/.test(cc) || digitsOnly.length < 12 || digitsOnly.length > 19) {
-                    addLine(unknownEl, cc);
-                    return;
-                }
+if (isEven) {
+digit *= 2;
+if (digit > 9) {
+digit -= 9;
+}
+}
 
-                if (luhnCheck(digitsOnly)) {
-                    addLine(validEl, cc);
-                } else {
-                    addLine(deadEl, cc);
-                }
-            });
-        });
+sum += digit;
+isEven = !isEven;
+}
 
-        function luhnCheck(num) {
-            let sum = 0;
-            let alt = false;
-            for (let i = num.length - 1; i >= 0; i--) {
-                let n = parseInt(num[i], 10);
-                if (alt) {
-                    n *= 2;
-                    if (n > 9) n -= 9;
-                }
-                sum += n;
-                alt = !alt;
-            }
-            return sum % 10 === 0;
-        }
+return (sum % 10) === 0;
+}
 
-        function addLine(element, text) {
-            const div = document.createElement('div');
-            div.className = 'card-line';
-            div.textContent = text;
-            element.appendChild(div);
-        }
+function getBin(number) {
+const len = number.length;
+if (len >= 6) return number.substring(0, 6);
+if (len >= 4) return number.substring(0, 4);
+if (len >= 2) return number.substring(0, 2);
+return number;
+}
 
-        function copyCol(id) {
-            const container = document.getElementById(id);
-            const text = container.innerText;
-            if (!text) return;
-            navigator.clipboard.writeText(text).then(() => {
-                // Visual feedback could go here
-            });
-        }
-    </script>
+function checkBins() {
+const input = document.getElementById('input-cards').value;
+const validDiv = document.getElementById('valid-cards');
+const deadDiv = document.getElementById('dead-cards');
+const unknownDiv = document.getElementById('unknown-cards');
+
+const validCount = document.getElementById('valid-count');
+const deadCount = document.getElementById('dead-count');
+const unknownCount = document.getElementById('unknown-count');
+
+validDiv.innerHTML = '';
+deadDiv.innerHTML = '';
+unknownDiv.innerHTML = '';
+validCount.textContent = '0';
+deadCount.textContent = '0';
+unknownCount.textContent = '0';
+
+const lines = input.split(/\n/);
+
+lines.forEach(line => {
+let cleanLine = line.trim();
+if (!cleanLine) return;
+
+// Extract the number part (first part before | or space)
+let rawNumber = cleanLine.split(/[| ]/)[0];
+
+if (luhnCheck(rawNumber)) {
+let bin = getBin(rawNumber);
+let status = "Valid"; // Assume valid first
+
+// You can add specific BIN checks here if needed,
+// but usually Luhn + BIN pattern is enough for "Valid" display
+let html = <div class="card-line">${cleanLine} <span style="color:#888">BIN: ${bin}</span></div>;
+validDiv.innerHTML += html;
+validCount.textContent = parseInt(validCount.textContent) + 1;
+} else {
+let html = <div class="card-line">${cleanLine}</div>;
+deadDiv.innerHTML += html;
+deadCount.textContent = parseInt(deadCount.textContent) + 1;
+}
+});
+}
+
+document.getElementById('check-btn').addEventListener('click', checkBins);
+
+function copyToClipboard(elementId) {
+const content = document.getElementById(elementId).innerText;
+if (!content) return;
+
+navigator.clipboard.writeText(content).then(() => {
+alert('Copied to clipboard');
+}).catch(err => {
+console.error('Failed to copy: ', err);
+});
+}
+</script>
 </body>
 </html>
+
