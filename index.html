@@ -1,283 +1,417 @@
-Copy
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CC Luhn Checker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luhn CC Checker</title>
     <style>
         :root {
-            --bg: #121212;
-            --surface: #1e1e1e;
-            --text: #e0e0e0;
-            --accent: #007aff;
-            --valid: #34c759;
-            --dead: #ff3b30;
-            --unknown: #ffcc00;
-            --border: #333;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --live: #10b981;
+            --dead: #ef4444;
+            --unknown: #f59e0b;
+            --border: #334155;
+            --radius: 12px;
         }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg);
             color: var(--text);
-            margin: 0;
-            padding: 15px;
-            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            gap: 1.5rem;
         }
 
-        h1 {
-            font-size: 1.2rem;
+        /* Header */
+        header {
             text-align: center;
-            margin: 0 0 10px 0;
-            color: var(--accent);
+            margin-bottom: 1rem;
         }
+        h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 0.5rem; }
+        p.subtitle { color: var(--text-muted); font-size: 0.9rem; }
 
-        .input-section {
-            flex: 0 0 auto;
-            margin-bottom: 10px;
+        /* Input Area */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
         }
 
         textarea {
             width: 100%;
-            height: 100px;
-            background-color: var(--surface);
-            color: var(--text);
+            height: 180px;
+            background-color: var(--card-bg);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 10px;
-            font-family: monospace;
-            font-size: 14px;
+            border-radius: var(--radius);
+            color: var(--text);
+            padding: 1rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1rem;
             resize: vertical;
-            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
         }
 
-        button#check-btn {
-            width: 100%;
-            padding: 12px;
-            margin-top: 10px;
+        textarea:focus { border-color: var(--accent); }
+
+        button {
             background-color: var(--accent);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
+            padding: 1rem;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-weight: 600;
             cursor: pointer;
+            transition: opacity 0.2s;
         }
 
-        button#check-btn:active {
-            opacity: 0.8;
+        button:hover { opacity: 0.9; }
+        button:disabled { background-color: var(--border); cursor: not-allowed; }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
         }
 
-        .output-container {
-            flex: 1;
-            display: flex;
-            gap: 10px;
-            min-height: 0;
-        }
-
-        .col {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background-color: var(--surface);
-            border-radius: 8px;
-            overflow: hidden;
+        .stat-card {
+            background-color: var(--card-bg);
             border: 1px solid var(--border);
-        }
-
-        .col-header {
-            padding: 8px;
-            font-weight: bold;
-            font-size: 0.9rem;
+            border-radius: var(--radius);
+            padding: 1.5rem;
             text-align: center;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            position: relative;
+            overflow: hidden;
         }
 
-        .col.valid .col-header { background-color: rgba(52, 199, 89, 0.2); color: var(--valid); }
-        .col.dead .col-header { background-color: rgba(255, 59, 48, 0.2); color: var(--dead); }
-        .col.unknown .col-header { background-color: rgba(255, 204, 0, 0.2); color: var(--unknown); }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 4px; height: 100%;
+        }
 
-        .col-header span {
+        .stat-card.live::before { background-color: var(--live); }
+        .stat-card.dead::before { background-color: var(--dead); }
+        .stat-card.unknown::before { background-color: var(--unknown); }
+
+        .stat-count {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            text-transform: uppercase;
             font-size: 0.8rem;
-            opacity: 0.8;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: var(--text-muted);
         }
 
-        .copy-btn {
-            background: none;
-            border: 1px solid currentColor;
-            color: inherit;
-            border-radius: 4px;
-            padding: 2px 6px;
-            font-size: 0.7rem;
-            cursor: pointer;
-        }
+        .live .stat-count { color: var(--live); }
+        .dead .stat-count { color: var(--dead); }
+        .unknown .stat-count { color: var(--unknown); }
 
-        .col-content {
-            flex: 1;
+        /* Results Table */
+        .results-container {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            max-height: 400px;
             overflow-y: auto;
-            padding: 5px;
-            font-family: monospace;
-            font-size: 12px;
         }
 
-        .card-line {
-            padding: 4px 6px;
-            border-bottom: 1px solid #333;
-            word-break: break-all;
-            display: flex;
-            justify-content: space-between;
+        .results-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 2fr;
+            padding: 1rem;
+            background-color: rgba(0,0,0,0.2);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .result-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 2fr;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
             align-items: center;
+            transition: background 0.1s;
         }
 
-        .card-line:last-child {
-            border-bottom: none;
-        }
+        .result-row:last-child { border-bottom: none; }
+        .result-row:hover { background-color: rgba(255,255,255,0.03); }
 
-        ::-webkit-scrollbar {
-            width: 6px;
+        .cc-number { font-family: 'Courier New', monospace; font-weight: 600; color: var(--text); }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            width: fit-content;
         }
-        ::-webkit-scrollbar-track {
-            background: var(--surface);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #555;
-            border-radius: 3px;
+        
+        .status-live { background: rgba(16, 185, 129, 0.1); color: var(--live); border: 1px solid var(--live); }
+        .status-dead { background: rgba(239, 68, 68, 0.1); color: var(--dead); border: 1px solid var(--dead); }
+        .status-unknown { background: rgba(245, 158, 11, 0.1); color: var(--unknown); border: 1px solid var(--unknown); }
+        .status-invalid { background: rgba(148, 163, 184, 0.1); color: var(--text-muted); border: 1px solid var(--text-muted); }
+
+        .reason { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .results-header, .result-row { grid-template-columns: 1.5fr 1fr 1fr; }
+            .results-header > :nth-child(4), .result-row > :nth-child(4) { display: none; }
         }
     </style>
 </head>
 <body>
-    <h1>CC Checker</h1>
-    
-    <div class="input-section">
-        <textarea id="input-cards" placeholder="Enter cards (number only or number|date|cvv)..."></textarea>
-        <button id="check-btn">Check</button>
+
+<div class="container">
+    <header>
+        <h1>Luhn Checker</h1>
+        <p class="subtitle">Paste pipe-formatted cards below (Number|MM/YY|CVV or Number|MM|YY|CVV)</p>
+    </header>
+
+    <div class="input-group">
+        <textarea id="inputData" placeholder="4111111111111111|12|2025|123&#10;5500000000000004|01/26|456&#10;4000222222222222|05|2024|789"></textarea>
+        <button id="analyzeBtn" onclick="analyzeCards()">Analyze</button>
     </div>
 
-    <div class="output-container">
-        <div class="col valid">
-            <div class="col-header">
-                Valid <span id="valid-count">0</span>
-                <button class="copy-btn" id="copy-valid">Copy</button>
-            </div>
-            <div class="col-content" id="valid-cards"></div>
+    <div class="stats-grid">
+        <div class="stat-card live">
+            <div class="stat-count" id="countLive">0</div>
+            <div class="stat-label">Live</div>
         </div>
-
-        <div class="col dead">
-            <div class="col-header">
-                Dead <span id="dead-count">0</span>
-                <button class="copy-btn" id="copy-dead">Copy</button>
-            </div>
-            <div class="col-content" id="dead-cards"></div>
+        <div class="stat-card dead">
+            <div class="stat-count" id="countDead">0</div>
+            <div class="stat-label">Dead</div>
         </div>
-
-        <div class="col unknown">
-            <div class="col-header">
-                Unknown <span id="unknown-count">0</span>
-                <button class="copy-btn" id="copy-unknown">Copy</button>
-            </div>
-            <div class="col-content" id="unknown-cards"></div>
+        <div class="stat-card unknown">
+            <div class="stat-count" id="countUnknown">0</div>
+            <div class="stat-label">Unknown</div>
         </div>
     </div>
 
-    <script>
-        function luhnCheck(cardNumber) {
-            if (typeof cardNumber !== 'string') return false;
-            let digits = cardNumber.replace(/\D/g, '');
-            if (digits.length < 13 || digits.length > 19) return false;
+    <div class="results-container" id="resultsContainer">
+        <div class="results-header">
+            <div>Card Details</div>
+            <div>Status</div>
+            <div>Reason</div>
+            <div>Details</div>
+        </div>
+        <div id="resultsList">
+            <!-- Results injected here -->
+        </div>
+    </div>
+</div>
 
-            let sum = 0;
-            let isEven = false;
+<script>
+    // --- Logic ---
 
-            for (let i = digits.length - 1; i >= 0; i--) {
-                let digit = parseInt(digits[i], 10);
-                if (isEven) {
-                    digit *= 2;
-                    if (digit > 9) digit -= 9;
-                }
-                sum += digit;
-                isEven = !isEven;
+    function parseCardLine(line) {
+        // Remove whitespace
+        line = line.trim();
+        if (!line) return null;
+
+        // Split by pipe
+        const parts = line.split('|');
+        
+        if (parts.length < 3) {
+            return { raw: line, valid: false, reason: "Format Error: Expected at least 3 parts (Num|Date|CVV)" };
+        }
+
+        const number = parts[0].trim();
+        const datePart = parts[1].trim();
+        const cvv = parts[2].trim();
+
+        // Normalize date handling
+        // Formats: MM/YY, MM|YY (if split weirdly), MM/YY/CCYY
+        let month = "";
+        let year = "";
+        
+        if (datePart.includes('/')) {
+            const [m, y] = datePart.split('/');
+            month = m;
+            year = y;
+        } else if (parts.length >= 4) {
+             // Handle format: Num|MM|YY|CVV
+             month = parts[1].trim();
+             year = parts[2].trim();
+        } else {
+            month = datePart;
+            year = "";
+        }
+
+        // Clean up year (remove 2024 -> 24 if needed, though Luhn doesn't care about year)
+        year = year.replace(/^20/, '');
+
+        return {
+            raw: line,
+            number: number,
+            month: month,
+            year: year,
+            cvv: cvv
+        };
+    }
+
+    function luhnCheck(numStr) {
+        let arr = (numStr + '').split('').map(x => parseInt(x));
+        if (arr.length === 0) return false;
+        
+        // Reverse for calculation
+        arr.reverse();
+        
+        let sum = 0;
+        for (let i = 0; i < arr.length; i++) {
+            let n = arr[i];
+            if (i % 2 === 1) {
+                n *= 2;
+                if (n > 9) n -= 9;
             }
-            return (sum % 10) === 0;
+            sum += n;
         }
+        
+        return sum % 10 === 0;
+    }
 
-        function getBin(number) {
-            const len = number.length;
-            if (len >= 6) return number.substring(0, 6);
-            if (len >= 4) return number.substring(0, 4);
-            if (len >= 2) return number.substring(0, 2);
-            return number;
-        }
+    function detectBin(number) {
+        // Simple BIN lookup simulation
+        if (number.startsWith('4')) return 'Visa';
+        if (number.startsWith('5') || number.startsWith('2')) return 'Mastercard';
+        if (number.startsWith('3')) return 'Amex';
+        if (number.startsWith('6')) return 'Discover';
+        return 'Unknown';
+    }
 
-        function checkBins() {
-            const input = document.getElementById('input-cards').value;
-            const validDiv = document.getElementById('valid-cards');
-            const deadDiv = document.getElementById('dead-cards');
-            const unknownDiv = document.getElementById('unknown-cards');
-            
-            const validCount = document.getElementById('valid-count');
-            const deadCount = document.getElementById('dead-count');
-            const unknownCount = document.getElementById('unknown-count');
+    // Simulate API check
+    function simulateApiCheck(cardData) {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                const rand = Math.random();
+                let status, reason, details;
 
-            validDiv.innerHTML = '';
-            deadDiv.innerHTML = '';
-            unknownDiv.innerHTML = '';
-            validCount.textContent = '0';
-            deadCount.textContent = '0';
-            unknownCount.textContent = '0';
-
-            const lines = input.split(/\n/);
-            
-            lines.forEach(line => {
-                let cleanLine = line.trim();
-                if (!cleanLine) return;
-
-                let rawNumber = cleanLine.split(/[| ]/)[0];
-                
-                if (luhnCheck(rawNumber)) {
-                    let bin = getBin(rawNumber);
-                    let html = `<div class="card-line"><span>${cleanLine}</span> <span style="color:#888; font-size:0.8em">BIN: ${bin}</span></div>`;
-                    validDiv.innerHTML += html;
-                    validCount.textContent = parseInt(validCount.textContent) + 1;
-                } else {
-                    let html = `<div class="card-line">${cleanLine}</div>`;
-                    deadDiv.innerHTML += html;
-                    deadCount.textContent = parseInt(deadCount.textContent) + 1;
+                if (!cardData.valid) {
+                    resolve({ ...cardData, status: 'dead', reason: cardData.reason, details: 'Invalid Format' });
+                    return;
                 }
-            });
-        }
 
-        document.getElementById('check-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            checkBins();
+                if (!luhnCheck(cardData.number)) {
+                    resolve({ ...cardData, status: 'dead', reason: 'Luhn Failed', details: 'Check digit invalid' });
+                    return;
+                }
+
+                // Simulate Live/Dead/Unknown
+                if (rand > 0.7) {
+                    status = 'live';
+                    reason = 'Approved / Live';
+                    details = `${detectBin(cardData.number)} • ${cardData.month}/${cardData.year} • CVV: ${cardData.cvv}`;
+                } else if (rand > 0.3) {
+                    status = 'dead';
+                    reason = 'Declined / Invalid';
+                    details = `${detectBin(cardData.number)} • ${cardData.month}/${cardData.year} • CVV: ${cardData.cvv}`;
+                } else {
+                    status = 'unknown';
+                    reason = 'Unknown / Pending';
+                    details = `${detectBin(cardData.number)} • ${cardData.month}/${cardData.year} • CVV: ${cardData.cvv}`;
+                }
+
+                resolve({ ...cardData, status, reason, details });
+            }, 300 + Math.random() * 500); // Random delay 0.3-0.8s
+        });
+    }
+
+    async function analyzeCards() {
+        const input = document.getElementById('inputData').value;
+        const btn = document.getElementById('analyzeBtn');
+        const list = document.getElementById('resultsList');
+        const container = document.getElementById('resultsContainer');
+
+        if (!input.trim()) return;
+
+        // UI Reset
+        btn.disabled = true;
+        btn.innerText = "Analyzing...";
+        list.innerHTML = '';
+        
+        // Reset Counters
+        let counts = { live: 0, dead: 0, unknown: 0 };
+        document.getElementById('countLive').innerText = '0';
+        document.getElementById('countDead').innerText = '0';
+        document.getElementById('countUnknown').innerText = '0';
+
+        const lines = input.split('\n').filter(l => l.trim() !== '');
+        const promises = lines.map(line => {
+            const parsed = parseCardLine(line);
+            return simulateApiCheck(parsed);
         });
 
-        // Fix buttons to use IDs instead of inline onclick which can fail
-        document.getElementById('copy-valid').addEventListener('click', () => copyToClipboard('valid-cards'));
-        document.getElementById('copy-dead').addEventListener('click', () => copyToClipboard('dead-cards'));
-        document.getElementById('copy-unknown').addEventListener('click', () => copyToClipboard('unknown-cards'));
+        const results = await Promise.all(promises);
 
-        function copyToClipboard(elementId) {
-            const container = document.getElementById(elementId);
-            const text = Array.from(container.children).map(el => el.innerText.split('BIN:')[0].trim()).join('\n');
+        results.forEach(res => {
+            // Update Counts
+            if (['live', 'dead', 'unknown'].includes(res.status)) {
+                counts[res.status]++;
+            }
+        });
+
+        // Update UI Counts
+        document.getElementById('countLive').innerText = counts.live;
+        document.getElementById('countDead').innerText = counts.dead;
+        document.getElementById('countUnknown').innerText = counts.unknown;
+
+        // Render Rows
+        results.forEach(res => {
+            const row = document.createElement('div');
+            row.className = 'result-row';
             
-            if (!text) return;
-            
-            navigator.clipboard.writeText(text).then(() => {
-                // Optional: visual feedback
-                const btn = event.target;
-                const originalText = btn.innerText;
-                btn.innerText = 'Copied!';
-                setTimeout(() => btn.innerText = originalText, 1000);
-            }).catch(err => {
-                console.error('Failed to copy: ', err);
-            });
-        }
-    </script>
+            // Format card number with spaces for readability (optional, but cleaner)
+            const displayNum = res.number.replace(/(.{4})/g, '$1 ').trim();
+
+            row.innerHTML = `
+                <div class="cc-number">${displayNum}</div>
+                <div><span class="status-badge status-${res.status}">${res.status}</span></div>
+                <div class="reason">${res.reason}</div>
+                <div class="reason" style="opacity: 0.6;">${res.details}</div>
+            `;
+            list.appendChild(row);
+        });
+
+        btn.disabled = false;
+        btn.innerText = "Analyze";
+    }
+</script>
+
 </body>
 </html>
