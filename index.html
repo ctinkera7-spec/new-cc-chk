@@ -4,43 +4,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Luhn Checker</title>
+    <title>Luhn Checker Pro</title>
     <style>
         :root {
             --bg: #09090b;
             --surface: #18181b;
-            --surface-border: #27272a;
+            --border: #27272a;
             --text: #fafafa;
-            --text-muted: #a1a1aa;
+            --muted: #a1a1aa;
             --primary: #6366f1;
-            --primary-hover: #4f46e5;
             --live: #10b981;
             --dead: #ef4444;
             --unknown: #f59e0b;
-            --invalid: #71717a;
             --radius: 8px;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            padding: 20px;
-            padding-bottom: 80px; /* Space for toast */
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 20px; padding-bottom: 80px; }
 
-        .container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        .container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 
-        /* Header & Input */
-        header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        h1 { font-size: 1.5rem; font-weight: 700; }
-        
+        /* Input Section */
+        .input-wrapper { position: relative; }
         textarea {
             width: 100%;
-            height: 150px;
+            height: 160px;
             background: var(--surface);
-            border: 1px solid var(--surface-border);
+            border: 1px solid var(--border);
             border-radius: var(--radius);
             color: var(--text);
             padding: 15px;
@@ -48,337 +38,278 @@
             font-size: 14px;
             resize: vertical;
         }
+        textarea:focus { border-color: var(--primary); }
 
-        .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
-        
+        .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
         button {
-            background: var(--primary);
-            color: white;
+            flex: 1;
+            padding: 12px;
             border: none;
-            padding: 12px 24px;
             border-radius: var(--radius);
             font-weight: 600;
             cursor: pointer;
-            transition: 0.2s;
             font-size: 14px;
+            transition: 0.2s;
         }
-        button:hover { background: var(--primary-hover); }
-        button.secondary { background: var(--surface); border: 1px solid var(--surface-border); }
-        button.secondary:hover { background: #27272a; }
-        
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #4f46e5; }
+        .btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+        .btn-secondary:hover { background: #27272a; color: var(--text); }
+
         /* Stats */
-        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-        .stat-box {
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .stat-card {
             background: var(--surface);
-            border: 1px solid var(--surface-border);
+            border: 1px solid var(--border);
             padding: 15px;
             border-radius: var(--radius);
             text-align: center;
             position: relative;
             overflow: hidden;
         }
-        .stat-box::after {
-            content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
-        }
-        .stat-box.live::after { background: var(--live); }
-        .stat-box.dead::after { background: var(--dead); }
-        .stat-box.unknown::after { background: var(--unknown); }
+        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; }
+        .stat-card.live::before { background: var(--live); }
+        .stat-card.dead::before { background: var(--dead); }
+        .stat-card.unknown::before { background: var(--unknown); }
 
-        .stat-val { font-size: 2rem; font-weight: 700; margin-bottom: 5px; }
-        .stat-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
+        .stat-num { font-size: 2rem; font-weight: 700; margin-bottom: 5px; }
+        .stat-label { text-transform: uppercase; font-size: 0.75rem; color: var(--muted); letter-spacing: 1px; }
 
         /* Results List */
         .results-list { display: flex; flex-direction: column; gap: 10px; }
-        
-        .card-item {
+        .card-row {
             background: var(--surface);
-            border: 1px solid var(--surface-border);
+            border: 1px solid var(--border);
             border-radius: var(--radius);
             padding: 15px;
             display: grid;
             grid-template-columns: 1fr 120px 1fr;
-            gap: 15px;
             align-items: center;
+            gap: 15px;
             cursor: pointer;
             transition: 0.2s;
             position: relative;
         }
-        .card-item:hover { border-color: var(--text-muted); background: #1f1f23; }
-        .card-item:active { transform: scale(0.99); }
-
-        .card-info { font-family: monospace; font-size: 1.1rem; font-weight: 600; letter-spacing: 0.5px; }
-        .card-meta { display: flex; flex-direction: column; gap: 4px; }
-        .status-tag {
+        .card-row:hover { border-color: var(--muted); background: #1f1f23; }
+        
+        .row-num { font-family: monospace; font-size: 1.1rem; font-weight: 600; }
+        .row-status { display: flex; flex-direction: column; gap: 5px; }
+        .badge {
             display: inline-block;
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 0.75rem;
             font-weight: 700;
-            text-transform: uppercase;
             width: fit-content;
+            text-transform: uppercase;
         }
+        .badge-live { background: rgba(16, 185, 129, 0.1); color: var(--live); }
+        .badge-dead { background: rgba(239, 68, 68, 0.1); color: var(--dead); }
+        .badge-unknown { background: rgba(245, 158, 11, 0.1); color: var(--unknown); }
         
-        .status-live { background: rgba(16, 185, 129, 0.1); color: var(--live); }
-        .status-dead { background: rgba(239, 68, 68, 0.1); color: var(--dead); }
-        .status-unknown { background: rgba(245, 158, 11, 0.1); color: var(--unknown); }
-        .status-invalid { background: rgba(113, 113, 122, 0.1); color: var(--invalid); }
-
-        .reason { font-size: 0.85rem; color: var(--text-muted); }
-
-        /* Mobile Adjustments */
-        @media (max-width: 600px) {
-            .card-item { grid-template-columns: 1fr; gap: 8px; }
-            .card-item .card-meta { flex-direction: row; align-items: center; justify-content: space-between; }
-            .stat-val { font-size: 1.5rem; }
-        }
+        .row-reason { font-size: 0.85rem; color: var(--muted); }
+        .row-details { font-size: 0.85rem; color: #71717a; text-align: right; }
 
         /* Toast */
         #toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--text);
-            color: var(--bg);
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-weight: 600;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-            z-index: 1000;
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: var(--text); color: var(--bg); padding: 10px 20px;
+            border-radius: 20px; font-weight: 600; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 1000;
         }
         #toast.show { opacity: 1; }
 
-        /* Copy Button inside item */
-        .copy-icon {
-            position: absolute;
-            right: 15px;
-            top: 15px;
-            opacity: 0;
-            transition: 0.2s;
-            color: var(--primary);
+        /* Mobile */
+        @media (max-width: 600px) {
+            .card-row { grid-template-columns: 1fr; gap: 10px; }
+            .row-details { text-align: left; }
         }
-        .card-item:hover .copy-icon { opacity: 1; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <header>
-        <h1>Luhn Check Pro</h1>
-        <div class="btn-row">
-            <button class="secondary" onclick="copyStatus('live')">Copy Live</button>
-            <button class="secondary" onclick="copyStatus('dead')">Copy Dead</button>
-            <button class="secondary" onclick="copyStatus('unknown')">Copy Unknown</button>
-        </div>
-    </header>
-
-    <div class="input-group">
+    <div class="input-wrapper">
         <textarea id="inputData" placeholder="4111111111111111|12|2025|123&#10;5500000000000004|01/26|456"></textarea>
-        <button onclick="analyze()" id="analyzeBtn">Analyze Cards</button>
-    </div>
-
-    <div class="stats">
-        <div class="stat-box live">
-            <div class="stat-val" id="countLive">0</div>
-            <div class="stat-label">Live</div>
-        </div>
-        <div class="stat-box dead">
-            <div class="stat-val" id="countDead">0</div>
-            <div class="stat-label">Dead</div>
-        </div>
-        <div class="stat-box unknown">
-            <div class="stat-val" id="countUnknown">0</div>
-            <div class="stat-label">Unknown</div>
+        <div class="controls">
+            <button class="btn-primary" id="analyzeBtn" onclick="runAnalysis()">Analyze</button>
+            <button class="btn-secondary" onclick="copyBatch('live')">Copy Live</button>
+            <button class="btn-secondary" onclick="copyBatch('dead')">Copy Dead</button>
+            <button class="btn-secondary" onclick="copyBatch('unknown')">Copy Unknown</button>
         </div>
     </div>
 
-    <div class="results-list" id="resultsList">
-        <!-- Items go here -->
+    <div class="stats-grid">
+        <div class="stat-card live"><div class="stat-num" id="cLive">0</div><div class="stat-label">Live</div></div>
+        <div class="stat-card dead"><div class="stat-num" id="cDead">0</div><div class="stat-label">Dead</div></div>
+        <div class="stat-card unknown"><div class="stat-num" id="cUnknown">0</div><div class="stat-label">Unknown</div></div>
     </div>
+
+    <div class="results-list" id="resultsList"></div>
 </div>
 
 <div id="toast">Copied!</div>
 
 <script>
-    // --- Core Logic ---
+    /* --- Validation Engine --- */
+    const BIN_RANGES = {
+        '4': [{ start: 40, end: 49, type: 'Visa', length: [13, 16, 19] }],
+        '5': [{ start: 50, end: 59, type: 'MC', length: [16] }], // Includes 2-series MC
+        '2': [{ start: 2221, end: 2720, type: 'MC 2-Series', length: [16] }],
+        '3': [{ start: 34, end: 37, type: 'Amex', length: [15] }],
+        '6': [{ start: 6011, end: 6011, type: 'Discover', length: [16] }]
+    };
 
     function parseLine(line) {
         line = line.trim();
         if (!line) return null;
+        const p = line.split('|');
+        if (p.length < 2) return { raw: line, valid: false, reason: "Bad Format" };
         
-        const parts = line.split('|');
-        if (parts.length < 2) return { raw: line, valid: false, reason: "Missing separator (|)", number: line };
-
-        const number = parts[0].trim();
-        const date = parts[1].trim();
-        const cvv = parts[2] ? parts[2].trim() : "N/A";
-
-        let month = "", year = "";
+        const num = p[0].trim();
+        const date = p[1].trim();
+        const cvv = p[2] ? p[2].trim() : 'N/A';
         
+        let m = '', y = '';
         if (date.includes('/')) {
-            [month, year] = date.split('/');
-        } else if (parts.length > 2) {
-            month = parts[1].trim();
-            year = parts[2].trim();
+            [m, y] = date.split('/');
+        } else if (p.length > 2) {
+            m = p[1].trim();
+            y = p[2].trim();
         } else {
-            month = date;
-            year = "";
+            m = date;
         }
-
-        return { raw: line, number, month, year, cvv, valid: true };
+        
+        // Normalize year (2026 -> 26)
+        y = y.replace(/^20/, '');
+        
+        return { raw: line, num, m, y, cvv };
     }
 
-    function luhnCheck(num) {
-        if (!num || num.length < 12) return false; // Minimum length for most cards
+    function validateNumber(numStr) {
+        // Strip non-digits
+        numStr = numStr.replace(/\D/g, '');
+        if (numStr.length < 12) return { valid: false, reason: "Too Short" };
 
-        // Remove non-digits just in case
-        num = num.replace(/\D/g, '');
-        if (num.length < 13) return false;
+        // 1. Luhn Check
+        if (!luhn(numStr)) return { valid: false, reason: "Luhn Failed" };
 
-        let sum = 0;
-        let isEven = false;
+        // 2. BIN Check
+        const prefix = numStr.substring(0, 4);
+        const firstDigit = numStr[0];
         
-        // Iterate backwards
-        for (let i = num.length - 1; i >= 0; i--) {
-            let digit = parseInt(num[i], 10);
-            
-            if (isEven) {
-                digit *= 2;
-                if (digit > 9) digit -= 9;
-            }
-            
-            sum += digit;
-            isEven = !isEven;
+        let match = null;
+        if (BIN_RANGES[firstDigit]) {
+            match = BIN_RANGES[firstDigit].find(b => {
+                if (prefix.length >= 2 && prefix.length <= 4) {
+                    const val = parseInt(prefix);
+                    if (val >= b.start && val <= b.end) return b.length.includes(numStr.length);
+                }
+                return false;
+            });
         }
-        
+
+        if (!match) return { valid: false, reason: "Unknown BIN" };
+
+        // 3. Fake Pattern Check
+        if (/^0+$/.test(numStr)) return { valid: false, reason: "Fake (Zeros)" };
+        if (/^1+$/.test(numStr)) return { valid: false, reason: "Fake (Ones)" };
+
+        return { valid: true, reason: "Luhn Valid", bin: match.type };
+    }
+
+    function luhn(str) {
+        let sum = 0, alt = false;
+        for (let i = str.length - 1; i >= 0; i--) {
+            let n = parseInt(str[i]);
+            if (alt) { n *= 2; if (n > 9) n -= 9; }
+            sum += n;
+            alt = !alt;
+        }
         return sum % 10 === 0;
     }
 
-    function getBin(num) {
-        if (num.startsWith('4')) return 'Visa';
-        if (num.startsWith('5') || num.startsWith('2')) return 'Mastercard';
-        if (num.startsWith('34') || num.startsWith('37')) return 'Amex';
-        if (num.startsWith('6')) return 'Discover';
-        return 'Other';
+    function checkStatus(parsed) {
+        const val = validateNumber(parsed.num);
+        if (!val.valid) return { ...parsed, status: 'dead', reason: val.reason };
+
+        // Check Expiry
+        const now = new Date();
+        const exp = new Date(2000 + parseInt(parsed.y || '24'), parseInt(parsed.m) - 1);
+        
+        if (exp < now) return { ...parsed, status: 'dead', reason: 'Expired' };
+
+        // Simulate Bank Check (Deterministic based on number to avoid flickering)
+        // We use a hash of the number to decide fate so results are consistent for the same card
+        const hash = [...parsed.num].reduce((a, b) => a + b.charCodeAt(0), 0);
+        
+        if (hash % 5 === 0) return { ...parsed, status: 'live', reason: 'Approved' };
+        if (hash % 5 < 3) return { ...parsed, status: 'dead', reason: 'Declined' };
+        
+        return { ...parsed, status: 'unknown', reason: 'Unknown' };
     }
 
-    // Simulate API check (Replace this with your actual API call)
-    function checkCard(cardObj) {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                const isValid = luhnCheck(cardObj.number);
-                
-                if (!isValid) {
-                    resolve({ ...cardObj, status: 'dead', reason: 'Luhn Check Failed', isLive: false });
-                } else {
-                    // Simulate random results for demo
-                    const r = Math.random();
-                    if (r > 0.7) resolve({ ...cardObj, status: 'live', reason: 'Approved', isLive: true });
-                    else if (r > 0.3) resolve({ ...cardObj, status: 'dead', reason: 'Declined', isLive: false });
-                    else resolve({ ...cardObj, status: 'unknown', reason: 'Unknown', isLive: null });
-                }
-            }, 200);
-        });
-    }
+    /* --- UI Logic --- */
+    let results = [];
 
-    // --- UI Logic ---
-
-    let currentResults = [];
-
-    async function analyze() {
-        const input = document.getElementById('inputData').value;
+    async function runAnalysis() {
         const btn = document.getElementById('analyzeBtn');
         const list = document.getElementById('resultsList');
-        
         btn.disabled = true;
-        btn.innerText = "Processing...";
+        btn.innerText = "Running...";
+        
         list.innerHTML = '';
+        results = [];
         
-        const lines = input.split('\n').filter(l => l.trim());
-        currentResults = [];
+        const lines = document.getElementById('inputData').value.split('\n').filter(l => l.trim());
+        const promises = lines.map(l => checkStatus(parseLine(l)));
+        const processed = await Promise.all(promises);
         
-        // Reset counters
-        document.getElementById('countLive').innerText = '0';
-        document.getElementById('countDead').innerText = '0';
-        document.getElementById('countUnknown').innerText = '0';
-
-        const promises = lines.map(l => {
-            const parsed = parseLine(l);
-            return checkCard(parsed);
+        processed.forEach(r => {
+            results.push(r);
+            render(r);
         });
-
-        const results = await Promise.all(promises);
         
-        results.forEach(res => {
-            currentResults.push(res);
-            renderCard(res);
-        });
-
-        updateCounts();
+        updateStats();
         btn.disabled = false;
-        btn.innerText = "Analyze Cards";
+        btn.innerText = "Analyze";
     }
 
-    function renderCard(data) {
-        const list = document.getElementById('resultsList');
+    function render(r) {
         const div = document.createElement('div');
-        div.className = `card-item`;
-        
-        // Format number for display (spaces every 4)
-        const formattedNum = data.number.replace(/(.{4})/g, '$1 ').trim();
+        div.className = 'card-row';
+        div.onclick = () => copyToClipboard(r.raw);
         
         div.innerHTML = `
-            <div class="copy-icon" title="Copy to clipboard">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <div class="row-num">${r.num.replace(/(.{4})/g, '$1 ').trim()}</div>
+            <div class="row-status">
+                <span class="badge badge-${r.status}">${r.status}</span>
+                <div class="row-reason">${r.reason}</div>
             </div>
-            <div class="card-info">${formattedNum}</div>
-            <div class="card-meta">
-                <span class="status-tag status-${data.status}">${data.status}</span>
-                <div class="reason">${data.reason}</div>
-            </div>
-            <div class="card-meta" style="align-items: flex-end; font-size: 0.85rem; color: #71717a;">
-                ${data.month}/${data.year} • ${data.cvv}
+            <div class="row-details">
+                ${r.m}/${r.y} <br> ${r.cvv}
             </div>
         `;
-
-        // Click to copy
-        div.onclick = () => copyToClipboard(data.raw);
-        
-        list.prepend(div); // Newest first
+        list.prepend(div);
     }
 
-    function updateCounts() {
-        let live = 0, dead = 0, unknown = 0;
-        currentResults.forEach(r => {
-            if (r.status === 'live') live++;
-            else if (r.status === 'dead') dead++;
-            else unknown++;
-        });
+    function updateStats() {
+        const counts = { live: 0, dead: 0, unknown: 0 };
+        results.forEach(r => counts[r.status]++);
         
-        document.getElementById('countLive').innerText = live;
-        document.getElementById('countDead').innerText = dead;
-        document.getElementById('countUnknown').innerText = unknown;
+        document.getElementById('cLive').innerText = counts.live;
+        document.getElementById('cDead').innerText = counts.dead;
+        document.getElementById('cUnknown').innerText = counts.unknown;
     }
-
-    // --- Utilities ---
 
     function copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(() => showToast("Copied: " + text));
+        navigator.clipboard.writeText(text);
+        showToast("Copied: " + text);
     }
 
-    function copyStatus(status) {
-        const filtered = currentResults
-            .filter(r => r.status === status)
-            .map(r => r.raw)
-            .join('\n');
-        
-        if (!filtered) {
-            showToast("No " + status + " cards found");
-            return;
-        }
-        copyToClipboard(filtered);
+    function copyBatch(status) {
+        const batch = results.filter(r => r.status === status).map(r => r.raw).join('\n');
+        if (batch) copyToClipboard(batch);
+        else showToast("No " + status + " cards");
     }
 
     function showToast(msg) {
@@ -390,4 +321,3 @@
 </script>
 </body>
 </html>
-
