@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"> 
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -348,20 +348,47 @@
       color: #c62828;
     }
 
+    .bin-info {
+      background: #e3f2fd;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 10px;
+      border-left: 3px solid #2196f3;
+      font-size: 0.85em;
+    }
+
+    .bin-info-label {
+      color: #1565c0;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .bin-info-value {
+      color: #0d47a1;
+    }
+
     .vbv-badge {
       display: inline-block;
-      background: #fff3cd;
-      color: #856404;
       padding: 4px 8px;
-      border-radius: 5px;
+      border-radius: 4px;
       font-size: 0.75em;
       font-weight: 600;
-      margin-top: 8px;
+      margin-top: 4px;
     }
 
     .vbv-badge.yes {
-      background: #d4edda;
-      color: #155724;
+      background: #c8e6c9;
+      color: #1b5e20;
+    }
+
+    .vbv-badge.no {
+      background: #ffccbc;
+      color: #bf360c;
+    }
+
+    .vbv-badge.unknown {
+      background: #f0f0f0;
+      color: #666;
     }
 
     .empty-state {
@@ -394,8 +421,12 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
     }
 
     .modal-overlay.active {
@@ -480,54 +511,69 @@
       font-size: 0.95em;
     }
 
-    .valid-card-info {
+    .valid-card-meta {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
-      font-size: 0.85em;
+      gap: 8px;
+      font-size: 0.8em;
       margin-bottom: 8px;
     }
 
-    .valid-card-info-item {
+    .valid-card-meta-item {
       background: white;
       padding: 6px;
-      border-radius: 5px;
+      border-radius: 6px;
+      text-align: center;
     }
 
-    .valid-card-info-label {
+    .valid-card-meta-label {
       color: #999;
       font-size: 0.75em;
     }
 
-    .valid-card-info-value {
+    .valid-card-meta-value {
       color: #333;
       font-weight: 600;
     }
 
-    .modal-footer {
-      padding: 20px;
-      border-top: 2px solid #f0f0f0;
+    .valid-card-bank {
       display: flex;
-      gap: 10px;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85em;
+      margin-bottom: 8px;
+    }
+
+    .valid-card-bank-emoji {
+      font-size: 1.2em;
+    }
+
+    .charge-section {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #e0e0e0;
     }
 
     .charge-dropdown {
-      flex: 1;
-      padding: 10px;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 0.95em;
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 0.9em;
+      margin-bottom: 8px;
       cursor: pointer;
     }
 
     .charge-btn {
+      width: 100%;
+      padding: 8px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 10px 20px;
       border: none;
-      border-radius: 8px;
-      cursor: pointer;
+      border-radius: 6px;
       font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9em;
       transition: all 0.3s;
     }
 
@@ -539,6 +585,7 @@
     .charge-btn:disabled {
       opacity: 0.6;
       cursor: not-allowed;
+      transform: none;
     }
 
     @media (max-width: 768px) {
@@ -557,10 +604,6 @@
       .modal {
         width: 95%;
         max-height: 90vh;
-      }
-
-      .valid-card-info {
-        grid-template-columns: 1fr 1fr;
       }
     }
   </style>
@@ -613,36 +656,10 @@
         <button class="modal-close" id="modalClose">✕</button>
       </div>
       <div class="modal-content" id="modalContent"></div>
-      <div class="modal-footer">
-        <select class="charge-dropdown" id="chargeAmount">
-          <option value="">Select Charge Amount</option>
-          <option value="0.50">$0.50</option>
-          <option value="1.00">$1.00</option>
-          <option value="2.00">$2.00</option>
-          <option value="5.00">$5.00</option>
-          <option value="10.00">$10.00</option>
-          <option value="custom">Custom Amount</option>
-        </select>
-        <button class="charge-btn" id="chargeBtn">Charge Selected</button>
-      </div>
     </div>
   </div>
 
   <script>
-    // BIN Database for VBV Detection
-    const binDatabase = {
-      '411111': { vbv: true, issuer: 'Visa' },
-      '403163': { vbv: true, issuer: 'Visa' },
-      '550000': { vbv: true, issuer: 'Mastercard' },
-      '486786': { vbv: true, issuer: 'Visa' },
-      '378282': { vbv: true, issuer: 'American Express' },
-      '371449': { vbv: true, issuer: 'American Express' },
-      '378734': { vbv: true, issuer: 'American Express' },
-      '6011111': { vbv: true, issuer: 'Discover' },
-      '6011000': { vbv: true, issuer: 'Discover' },
-    };
-
-    // Bank detection database
     const bankDatabase = {
       '4': { name: 'Visa', emoji: '🏦', country: 'USA' },
       '5': { name: 'Mastercard', emoji: '💳', country: 'USA' },
@@ -663,17 +680,35 @@
       'BR': '🇧🇷',
     };
 
-    let allValidCards = [];
-
-    function checkVBV(cardNumber) {
-      const bin = cardNumber.substring(0, 6);
-      const binInfo = binDatabase[bin];
-      return binInfo ? binInfo.vbv : false;
-    }
+    let allResults = [];
 
     function getBankInfo(cardNumber) {
       const firstDigit = cardNumber.charAt(0);
       return bankDatabase[firstDigit] || { name: 'Unknown Bank', emoji: '🏧', country: 'Unknown' };
+    }
+
+    async function getBINInfo(cardNumber) {
+      try {
+        const bin = cardNumber.substring(0, 6);
+        const response = await fetch(`https://binlist.io/lookup/${bin}/`);
+        if (!response.ok) throw new Error('BIN lookup failed');
+        const data = await response.json();
+        return {
+          bank: data.bank?.name || 'Unknown',
+          country: data.country?.name || 'Unknown',
+          type: data.type || 'Unknown',
+          brand: data.scheme || 'Unknown',
+          vbv: data.security?.cvv ? true : false
+        };
+      } catch (error) {
+        return {
+          bank: 'Unknown',
+          country: 'Unknown',
+          type: 'Unknown',
+          brand: 'Unknown',
+          vbv: null
+        };
+      }
     }
 
     function luhnCheck(cardNumber) {
@@ -743,11 +778,11 @@
       };
     }
 
-    function validateCard(line) {
+    async function validateCard(line) {
       const data = parseCardData(line);
       const luhnResult = luhnCheck(data.number);
       const expiryResult = isExpired(data.month, data.year);
-      const vbvStatus = checkVBV(data.number);
+      const binInfo = await getBINInfo(data.number);
 
       const isValid = luhnResult.valid && expiryResult.valid;
       const bankInfo = getBankInfo(data.number);
@@ -762,7 +797,7 @@
         luhnResult,
         expiryResult,
         bankInfo,
-        vbvStatus,
+        binInfo,
         reasons: [luhnResult.reason, expiryResult.reason]
       };
     }
@@ -770,9 +805,12 @@
     function createCardElement(result) {
       const card = document.createElement('div');
       card.className = `card ${result.isValid ? 'valid' : 'invalid'}`;
+      card.style.display = 'none';
       card.dataset.valid = result.isValid;
 
       const maskedNumber = result.number.slice(-4).padStart(result.number.length, '*');
+      const vbvStatus = result.binInfo.vbv === true ? 'Yes' : result.binInfo.vbv === false ? 'No' : 'Unknown';
+      const vbvClass = result.binInfo.vbv === true ? 'yes' : result.binInfo.vbv === false ? 'no' : 'unknown';
 
       card.innerHTML = `
         <div class="card-header">
@@ -796,55 +834,66 @@
           ${result.cvv ? `<div class="detail-item"><div class="detail-label">CVV</div><div class="detail-value">***</div></div>` : ''}
         </div>
 
+        <div class="bin-info">
+          <div class="bin-info-label">BIN Information</div>
+          <div class="bin-info-value">Bank: ${result.binInfo.bank}</div>
+          <div class="bin-info-value">Type: ${result.binInfo.type}</div>
+          <div class="bin-info-value">Brand: ${result.binInfo.brand}</div>
+          <div class="vbv-badge ${vbvClass}">VBV: ${vbvStatus}</div>
+        </div>
+
         <div class="card-reason">
           <div class="reason-label">Validation Details</div>
           ${result.reasons.map(reason => `<div class="reason-text ${result.isValid ? 'valid' : 'invalid'}">• ${reason}</div>`).join('')}
-          <div class="vbv-badge ${result.vbvStatus ? 'yes' : 'no'}">
-            ${result.vbvStatus ? '✓ VBV Enabled' : '✗ VBV Not Detected'}
-          </div>
         </div>
       `;
 
       return card;
     }
 
-    function openValidCardsModal() {
-      const modalOverlay = document.getElementById('modalOverlay');
-      const modalContent = document.getElementById('modalContent');
+    function createValidCardItem(result) {
+      const item = document.createElement('div');
+      item.className = 'valid-card-item';
 
-      if (allValidCards.length === 0) {
-        alert('No valid cards to display');
-        return;
-      }
+      const vbvStatus = result.binInfo.vbv === true ? 'Yes' : result.binInfo.vbv === false ? 'No' : 'Unknown';
+      const vbvClass = result.binInfo.vbv === true ? 'yes' : result.binInfo.vbv === false ? 'no' : 'unknown';
 
-      modalContent.innerHTML = allValidCards.map(result => `
-        <div class="valid-card-item">
-          <div class="valid-card-number">${result.number}</div>
-          <div class="valid-card-info">
-            <div class="valid-card-info-item">
-              <div class="valid-card-info-label">Month</div>
-              <div class="valid-card-info-value">${result.month || 'N/A'}</div>
-            </div>
-            <div class="valid-card-info-item">
-              <div class="valid-card-info-label">Year</div>
-              <div class="valid-card-info-value">${result.year || 'N/A'}</div>
-            </div>
-            <div class="valid-card-info-item">
-              <div class="valid-card-info-label">CVV</div>
-              <div class="valid-card-info-value">${result.cvv || 'N/A'}</div>
-            </div>
+      item.innerHTML = `
+        <div class="valid-card-number">${result.number}</div>
+        <div class="valid-card-bank">
+          <div class="valid-card-bank-emoji">${result.bankInfo.emoji}</div>
+          <div>${result.bankInfo.name} - ${result.binInfo.bank}</div>
+        </div>
+        <div class="valid-card-meta">
+          <div class="valid-card-meta-item">
+            <div class="valid-card-meta-label">Expires</div>
+            <div class="valid-card-meta-value">${result.month}/${result.year}</div>
           </div>
-          <div style="font-size: 0.85em; color: #666; margin-top: 8px;">
-            <strong>${result.bankInfo.name}</strong> | ${result.vbvStatus ? '✓ VBV' : '✗ No VBV'}
+          <div class="valid-card-meta-item">
+            <div class="valid-card-meta-label">CVV</div>
+            <div class="valid-card-meta-value">${result.cvv || 'N/A'}</div>
+          </div>
+          <div class="valid-card-meta-item">
+            <div class="valid-card-meta-label">VBV</div>
+            <div class="valid-card-meta-value" style="color: ${vbvClass === 'yes' ? '#2e7d32' : vbvClass === 'no' ? '#c62828' : '#666'}">${vbvStatus}</div>
           </div>
         </div>
-      `).join('');
+        <div class="charge-section">
+          <select class="charge-dropdown" data-card-number="${result.number}">
+            <option value="">Select Charge Amount</option>
+            <option value="1">$1.00</option>
+            <option value="5">$5.00</option>
+            <option value="10">$10.00</option>
+            <option value="25">$25.00</option>
+            <option value="50">$50.00</option>
+            <option value="100">$100.00</option>
+            <option value="custom">Custom Amount</option>
+          </select>
+          <button class="charge-btn" data-card-number="${result.number}">Charge Card</button>
+        </div>
+      `;
 
-      modalOverlay.classList.add('active');
-    }
-
-    function closeModal() {
-      document.getElementById('modalOverlay').classList.remove('active');
+      return item;
     }
 
     async function bulkValidate() {
@@ -861,7 +910,7 @@
       progressBar.style.width = '0%';
       resultsSection.style.display = 'none';
       emptyState.style.display = 'none';
-      allValidCards = [];
+      allResults = [];
 
       if (lines.length === 0) {
         alert('No data provided.');
@@ -869,7 +918,7 @@
         return;
       }
 
-      const batchSize = 50;
+      const batchSize = 10;
       const total = lines.length;
       let processed = 0;
       let validCount = 0;
@@ -879,22 +928,19 @@
         const batch = lines.slice(i, i + batchSize);
 
         for (const line of batch) {
-          const result = validateCard(line);
+          const result = await validateCard(line);
+          allResults.push(result);
           const cardElement = createCardElement(result);
           cardsGrid.appendChild(cardElement);
 
-          if (result.isValid) {
-            validCount++;
-            allValidCards.push(result);
-          } else {
-            invalidCount++;
-          }
+          if (result.isValid) validCount++;
+          else invalidCount++;
         }
 
         processed += batch.length;
         progressBar.style.width = `${(processed / total) * 100}%`;
 
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
       document.getElementById('validCount').textContent = validCount;
@@ -924,35 +970,58 @@
       filterBtn.textContent = showValidOnly ? 'Show All' : 'Show Valid Only';
     }
 
-    function handleCharge() {
-      const amount = document.getElementById('chargeAmount').value;
-      if (!amount) {
-        alert('Please select a charge amount');
-        return;
+    function openValidCardsModal() {
+      const validCards = allResults.filter(r => r.isValid);
+      const modalContent = document.getElementById('modalContent');
+      const modalOverlay = document.getElementById('modalOverlay');
+
+      modalContent.innerHTML = '';
+
+      if (validCards.length === 0) {
+        modalContent.innerHTML = '<p style="text-align: center; color: #999;">No valid cards found</p>';
+      } else {
+        validCards.forEach(result => {
+          const item = createValidCardItem(result);
+          modalContent.appendChild(item);
+        });
+
+        // Add event listeners to charge buttons
+        document.querySelectorAll('.charge-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const dropdown = this.previousElementSibling;
+            const amount = dropdown.value;
+            const cardNumber = this.dataset.cardNumber;
+
+            if (!amount) {
+              alert('Please select an amount');
+              return;
+            }
+
+            if (amount === 'custom') {
+              const customAmount = prompt('Enter custom amount ($):');
+              if (customAmount && !isNaN(customAmount)) {
+                alert(`Charging $${customAmount} to card ending in ${cardNumber.slice(-4)}`);
+              }
+            } else {
+              alert(`Charging $${amount} to card ending in ${cardNumber.slice(-4)}`);
+            }
+          });
+        });
       }
 
-      if (amount === 'custom') {
-        const customAmount = prompt('Enter custom amount ($):');
-        if (!customAmount || isNaN(customAmount)) {
-          alert('Invalid amount');
-          return;
-        }
-        alert(`Would charge $${customAmount} to ${allValidCards.length} valid card(s)`);
-      } else {
-        alert(`Would charge $${amount} to ${allValidCards.length} valid card(s)`);
-      }
+      modalOverlay.classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modalOverlay').classList.remove('active');
     }
 
     document.getElementById('validateBtn').addEventListener('click', bulkValidate);
     document.getElementById('filterBtn').addEventListener('click', toggleFilter);
     document.getElementById('validStat').addEventListener('click', openValidCardsModal);
     document.getElementById('modalClose').addEventListener('click', closeModal);
-    document.getElementById('chargeBtn').addEventListener('click', handleCharge);
-
-    document.getElementById('modalOverlay').addEventListener('click', (e) => {
-      if (e.target === document.getElementById('modalOverlay')) {
-        closeModal();
-      }
+    document.getElementById('modalOverlay').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
     });
   </script>
 </body>
