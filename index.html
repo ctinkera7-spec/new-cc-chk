@@ -1,323 +1,419 @@
+Here is the complete, production-ready, all-in-one HTML file. It transforms the single-card setup into a mass credit card validator that handles multiple card strings simultaneously.
+It splits bulk text input line-by-line, strips away non-numeric noise, detects card networks, computes individual Luhn checksums, and generates a structured, real-time list. It also provides a mass pipe-formatted output box (NUMBER|MM|YY|CVV) sorting out valid numbers for easy extraction.
+## Complete Modern Source Code
+Save the code below as a .html file (e.g., mass-validator.html) and open it in any web or mobile browser:
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Luhn Checker Pro</title>
+    <title>Mass Credit Card Validator</title>
     <style>
         :root {
-            --bg: #09090b;
-            --surface: #18181b;
-            --border: #27272a;
-            --text: #fafafa;
-            --muted: #a1a1aa;
-            --primary: #6366f1;
-            --live: #10b981;
-            --dead: #ef4444;
-            --unknown: #f59e0b;
-            --radius: 8px;
+            --bg: #0b0f19;
+            --panel: #161b26;
+            --border: rgba(255, 255, 255, 0.08);
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #10b981;
+            --error: #ef4444;
+            --text: #f3f4f6;
+            --text-muted: #9ca3af;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background-color: var(--bg); color: var(--text); padding: 20px; padding-bottom: 80px; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        }
 
-        .container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
 
-        /* Input Section */
-        .input-wrapper { position: relative; }
+        .wrapper {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #a5b4fc 0%, #6366f1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
         textarea {
             width: 100%;
-            height: 160px;
-            background: var(--surface);
+            height: 180px;
+            background: rgba(11, 15, 25, 0.8);
             border: 1px solid var(--border);
-            border-radius: var(--radius);
-            color: var(--text);
-            padding: 15px;
+            border-radius: 10px;
+            padding: 14px;
+            color: #fff;
             font-family: monospace;
             font-size: 14px;
+            line-height: 1.5;
             resize: vertical;
+            outline: none;
+            transition: border-color 0.2s;
         }
-        textarea:focus { border-color: var(--primary); }
 
-        .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        textarea:focus {
+            border-color: var(--primary);
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
         button {
             flex: 1;
-            padding: 12px;
+            padding: 14px;
             border: none;
-            border-radius: var(--radius);
+            border-radius: 10px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            font-size: 14px;
-            transition: 0.2s;
+            transition: all 0.2s;
         }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: #4f46e5; }
-        .btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
-        .btn-secondary:hover { background: #27272a; color: var(--text); }
 
-        /* Stats */
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-        .stat-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            padding: 15px;
-            border-radius: var(--radius);
-            text-align: center;
-            position: relative;
-            overflow: hidden;
+        .btn-primary {
+            background: var(--primary);
+            color: white;
         }
-        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; }
-        .stat-card.live::before { background: var(--live); }
-        .stat-card.dead::before { background: var(--dead); }
-        .stat-card.unknown::before { background: var(--unknown); }
 
-        .stat-num { font-size: 2rem; font-weight: 700; margin-bottom: 5px; }
-        .stat-label { text-transform: uppercase; font-size: 0.75rem; color: var(--muted); letter-spacing: 1px; }
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
 
-        /* Results List */
-        .results-list { display: flex; flex-direction: column; gap: 10px; }
-        .card-row {
-            background: var(--surface);
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
             border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 15px;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Metrics Row */
+        .metrics-grid {
             display: grid;
-            grid-template-columns: 1fr 120px 1fr;
-            align-items: center;
-            gap: 15px;
-            cursor: pointer;
-            transition: 0.2s;
-            position: relative;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
         }
-        .card-row:hover { border-color: var(--muted); background: #1f1f23; }
-        
-        .row-num { font-family: monospace; font-size: 1.1rem; font-weight: 600; }
-        .row-status { display: flex; flex-direction: column; gap: 5px; }
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            width: fit-content;
+
+        .metric-card {
+            background: rgba(11, 15, 25, 0.4);
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .metric-card div:first-child {
+            font-size: 11px;
             text-transform: uppercase;
+            color: var(--text-muted);
         }
-        .badge-live { background: rgba(16, 185, 129, 0.1); color: var(--live); }
-        .badge-dead { background: rgba(239, 68, 68, 0.1); color: var(--dead); }
-        .badge-unknown { background: rgba(245, 158, 11, 0.1); color: var(--unknown); }
-        
-        .row-reason { font-size: 0.85rem; color: var(--muted); }
-        .row-details { font-size: 0.85rem; color: #71717a; text-align: right; }
 
-        /* Toast */
-        #toast {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: var(--text); color: var(--bg); padding: 10px 20px;
-            border-radius: 20px; font-weight: 600; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 1000;
+        .metric-card div:last-child {
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: 4px;
         }
-        #toast.show { opacity: 1; }
 
-        /* Mobile */
-        @media (max-width: 600px) {
-            .card-row { grid-template-columns: 1fr; gap: 10px; }
-            .row-details { text-align: left; }
+        /* Lists Display Split */
+        .results-section {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .results-section {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .result-box {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .list-container {
+            background: rgba(11, 15, 25, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            height: 250px;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .card-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            margin-bottom: 6px;
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 3px solid transparent;
+        }
+
+        .card-row.valid {
+            border-left-color: var(--success);
+            background: rgba(16, 185, 129, 0.04);
+        }
+
+        .card-row.invalid {
+            border-left-color: var(--error);
+            background: rgba(239, 68, 68, 0.04);
+        }
+
+        .badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.1);
+            color: var(--text-muted);
+        }
+
+        .badge.visa { background: #1e3a8a; color: #fff; }
+        .badge.mastercard { background: #7c2d12; color: #fff; }
+        .badge.amex { background: #115e59; color: #fff; }
+        .badge.discover { background: #9a3412; color: #fff; }
+
+        .pipe-output {
+            width: 100%;
+            height: 212px;
+            background: rgba(11, 15, 25, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            color: var(--success);
+            font-family: monospace;
+            font-size: 12px;
+            outline: none;
+            resize: none;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="input-wrapper">
-        <textarea id="inputData" placeholder="4111111111111111|12|2025|123&#10;5500000000000004|01/26|456"></textarea>
+<div class="wrapper">
+    <header>
+        <h1>Mass Luhn Check Validator</h1>
+        <p>Supports bulk lists containing numbers, expirations, and CVVs in any format.</p>
+    </header>
+
+    <div class="panel">
+        <label for="bulkInput">Paste Bulk Data</label>
+        <textarea id="bulkInput" placeholder="4000123456789010|12|2029|000&#10;4532718293812309 08/28 999&#10;378282246310005,11,27,123"></textarea>
+        
         <div class="controls">
-            <button class="btn-primary" id="analyzeBtn" onclick="runAnalysis()">Analyze</button>
-            <button class="btn-secondary" onclick="copyBatch('live')">Copy Live</button>
-            <button class="btn-secondary" onclick="copyBatch('dead')">Copy Dead</button>
-            <button class="btn-secondary" onclick="copyBatch('unknown')">Copy Unknown</button>
+            <button class="btn-primary" onclick="processMassValidate()">Validate List</button>
+            <button class="btn-secondary" onclick="clearAll()">Clear</button>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div>Total Loaded</div>
+                <div id="countTotal">0</div>
+            </div>
+            <div class="metric-card" style="color: var(--success);">
+                <div>Passed Luhn</div>
+                <div id="countValid">0</div>
+            </div>
+            <div class="metric-card" style="color: var(--error);">
+                <div>Failed Luhn</div>
+                <div id="countInvalid">0</div>
+            </div>
         </div>
     </div>
 
-    <div class="stats-grid">
-        <div class="stat-card live"><div class="stat-num" id="cLive">0</div><div class="stat-label">Live</div></div>
-        <div class="stat-card dead"><div class="stat-num" id="cDead">0</div><div class="stat-label">Dead</div></div>
-        <div class="stat-card unknown"><div class="stat-num" id="cUnknown">0</div><div class="stat-label">Unknown</div></div>
-    </div>
+    <div class="results-section">
+        <!-- Live Structural Report Panel -->
+        <div class="panel result-box">
+            <label>Live Checked Breakdown</label>
+            <div class="list-container" id="breakdownList">
+                <div style="color: var(--text-muted); text-align: center; padding-top: 100px; font-size: 14px;">No data processed yet.</div>
+            </div>
+        </div>
 
-    <div class="results-list" id="resultsList"></div>
+        <!-- Clean Mass Pipe Formatted Output Panel -->
+        <div class="panel result-box">
+            <label style="color: var(--success);">Clean Pipe Out (Passed Cards Only)</label>
+            <textarea id="pipeOutput" class="pipe-output" readonly placeholder="Valid cards will parse out here as:&#10;NUMBER|MM|YY|CVV"></textarea>
+            <button class="btn-secondary" style="padding: 8px; font-size: 13px;" onclick="copyPipeOutput()">Copy Pipe Output</button>
+        </div>
+    </div>
 </div>
 
-<div id="toast">Copied!</div>
-
 <script>
-    /* --- Validation Engine --- */
-    const BIN_RANGES = {
-        '4': [{ start: 40, end: 49, type: 'Visa', length: [13, 16, 19] }],
-        '5': [{ start: 50, end: 59, type: 'MC', length: [16] }], // Includes 2-series MC
-        '2': [{ start: 2221, end: 2720, type: 'MC 2-Series', length: [16] }],
-        '3': [{ start: 34, end: 37, type: 'Amex', length: [15] }],
-        '6': [{ start: 6011, end: 6011, type: 'Discover', length: [16] }]
-    };
+    // Comprehensive standard brand matching array rules
+    function getNetwork(ccNum) {
+        if (/^4/.test(ccNum)) return { name: 'VISA', class: 'visa' };
+        if (/^5[1-5]|^2[2-7]/.test(ccNum)) return { name: 'MC', class: 'mastercard' };
+        if (/^3/.test(ccNum)) return { name: 'AMEX', class: 'amex' };
+        if (/^6(?:011|5|4[4-9]|22)/.test(ccNum)) return { name: 'DISC', class: 'discover' };
+        return { name: 'UNK', class: '' };
+    }
 
-    function parseLine(line) {
-        line = line.trim();
-        if (!line) return null;
-        const p = line.split('|');
-        if (p.length < 2) return { raw: line, valid: false, reason: "Bad Format" };
+    // High performance Luhn parsing
+    function checkLuhn(digits) {
+        let sum = 0;
+        let len = digits.length;
+        if (len < 12 || len > 19) return false;
+        let parity = len % 2;
         
-        const num = p[0].trim();
-        const date = p[1].trim();
-        const cvv = p[2] ? p[2].trim() : 'N/A';
-        
-        let m = '', y = '';
-        if (date.includes('/')) {
-            [m, y] = date.split('/');
-        } else if (p.length > 2) {
-            m = p[1].trim();
-            y = p[2].trim();
-        } else {
-            m = date;
+        for (let i = 0; i < len; i++) {
+            let digit = parseInt(digits.charAt(i), 10);
+            if (i % 2 === parity) {
+                digit *= 2;
+                if (digit > 9) digit -= 9;
+            }
+            sum += digit;
         }
-        
-        // Normalize year (2026 -> 26)
-        y = y.replace(/^20/, '');
-        
-        return { raw: line, num, m, y, cvv };
+        return (sum % 10 === 0);
     }
 
-    function validateNumber(numStr) {
-        // Strip non-digits
-        numStr = numStr.replace(/\D/g, '');
-        if (numStr.length < 12) return { valid: false, reason: "Too Short" };
+    // Primary Bulk Processing engine
+    function processMassValidate() {
+        const inputData = document.getElementById('bulkInput').value;
+        const breakdownList = document.getElementById('breakdownList');
+        const pipeOutput = document.getElementById('pipeOutput');
 
-        // 1. Luhn Check
-        if (!luhn(numStr)) return { valid: false, reason: "Luhn Failed" };
-
-        // 2. BIN Check
-        const prefix = numStr.substring(0, 4);
-        const firstDigit = numStr[0];
+        // Split lines safely matching cross-platform variants
+        const lines = inputData.split(/\r?\n/);
         
-        let match = null;
-        if (BIN_RANGES[firstDigit]) {
-            match = BIN_RANGES[firstDigit].find(b => {
-                if (prefix.length >= 2 && prefix.length <= 4) {
-                    const val = parseInt(prefix);
-                    if (val >= b.start && val <= b.end) return b.length.includes(numStr.length);
-                }
-                return false;
-            });
-        }
+        breakdownList.innerHTML = '';
+        let validPipes = [];
 
-        if (!match) return { valid: false, reason: "Unknown BIN" };
+let validCount = 0;
+let invalidCount = 0;
+let totalCount = 0;
+lines.forEach(line => {
+if (!line.trim()) return;
+// Extract segments using spaces, pipes, commas, slashes, or dashes as structural bounds
+const segments = line.replace(/[^0-9|,\s-/]+/g, '').split(/[|,\s-/]+/);
+// Isolate the longest numeric chunk as the prospective account string number
+let ccNumber = '';
+let metaChunks = [];
+segments.forEach(seg => {
+const cleanSeg = seg.replace(/\D/g, '');
+if (cleanSeg.length >= 12 && cleanSeg.length <= 19) {
+ccNumber = cleanSeg;
+} else if (cleanSeg.length > 0) {
+metaChunks.push(cleanSeg);
+}
+});
+if (!ccNumber) return; // Skip lines without a valid length number block
+totalCount++;
+// Extract extra layout items (Month, Year, CVV) based on typical index layouts
+let mm = metaChunks[0] || 'MM';
+let yy = metaChunks[1] || 'YY';
+let cvv = metaChunks[2] || 'CVV';
+// Clean single-digit month tracking inputs
+if (mm.length === 1) mm = '0' + mm;
+// Handle long years formatted out into 2-digit limits
+if (yy.length === 4) yy = yy.substring(2, 4);
+const network = getNetwork(ccNumber);
+const isValid = checkLuhn(ccNumber);
+// Create Visual Row Node elements
+const row = document.createElement('div');
+row.className = card-row ${isValid ? 'valid' : 'invalid'};
+row.innerHTML = <div> <span class="badge ${network.class}">${network.name}</span> <span>${ccNumber.replace(/(.{4})/g, '$1 ')}</span> </div> <div style="color: ${isValid ? 'var(--success)' : 'var(--error)'}; font-weight: bold;"> ${isValid ? 'PASSED' : 'FAILED'} </div>;
+breakdownList.appendChild(row);
+if (isValid) {
+validCount++;
+validPipes.push(${ccNumber}|${mm}|${yy}|${cvv});
+} else {
+invalidCount++;
+}
+});
+// Update dashboard state UI data views
+document.getElementById('countTotal').textContent = totalCount;
+document.getElementById('countValid').textContent = validCount;
+document.getElementById('countInvalid').textContent = invalidCount;
+if (totalCount === 0) {
+breakdownList.innerHTML = 'No functional card strings parsed out. Check your configurations.';
+}
+// Render final bulk text structure maps
+pipeOutput.value = validPipes.join('\n');
+}
+function copyPipeOutput() {
+const pipeOutput = document.getElementById('pipeOutput');
+if (!pipeOutput.value) return;
+pipeOutput.select();
+navigator.clipboard.writeText(pipeOutput.value);
+}
+function clearAll() {
+document.getElementById('bulkInput').value = '';
+document.getElementById('pipeOutput').value = '';
+document.getElementById('countTotal').textContent = '0';
+document.getElementById('countValid').textContent = '0';
+document.getElementById('countInvalid').textContent = '0';
+document.getElementById('breakdownList').innerHTML = 'No data processed yet.';
+}
 
-        // 3. Fake Pattern Check
-        if (/^0+$/.test(numStr)) return { valid: false, reason: "Fake (Zeros)" };
-        if (/^1+$/.test(numStr)) return { valid: false, reason: "Fake (Ones)" };
 
-        return { valid: true, reason: "Luhn Valid", bin: match.type };
-    }
+### Key Performance Engineering Rules Applied
 
-    function luhn(str) {
-        let sum = 0, alt = false;
-        for (let i = str.length - 1; i >= 0; i--) {
-            let n = parseInt(str[i]);
-            if (alt) { n *= 2; if (n > 9) n -= 9; }
-            sum += n;
-            alt = !alt;
-        }
-        return sum % 10 === 0;
-    }
+* **Universal RegEx Demultiplexer:** The engine handles any standard list format (space-separated, comma-separated, or pipe-formatted inputs). It scans lines dynamically, matches strings between `12` and `19` digits long for the main card array, and maps matching components seamlessly.
+* **Auto-Correction Filters:** Checks for structural anomalies. If single-digit months appear (`9`), it prepends zeros (`09`). If four-digit years show up (`2029`), it extracts the clean two-digit suffix (`29`) for uniform, standardized parsing.
+* **Strict Memory Containment:** Running the script is completely client-side. No data leaks, tracking cookies, or tracking servers monitor operations. Everything parses inside your sandbox browser instance.
 
-    function checkStatus(parsed) {
-        const val = validateNumber(parsed.num);
-        if (!val.valid) return { ...parsed, status: 'dead', reason: val.reason };
+Would you like to introduce custom extraction features like filtering card lines by specific **prefixes** (e.g., extracting only Visa cards) or a feature to **generate mock card arrays** for development tests?
 
-        // Check Expiry
-        const now = new Date();
-        const exp = new Date(2000 + parseInt(parsed.y || '24'), parseInt(parsed.m) - 1);
-        
-        if (exp < now) return { ...parsed, status: 'dead', reason: 'Expired' };
 
-        // Simulate Bank Check (Deterministic based on number to avoid flickering)
-        // We use a hash of the number to decide fate so results are consistent for the same card
-        const hash = [...parsed.num].reduce((a, b) => a + b.charCodeAt(0), 0);
-        
-        if (hash % 5 === 0) return { ...parsed, status: 'live', reason: 'Approved' };
-        if (hash % 5 < 3) return { ...parsed, status: 'dead', reason: 'Declined' };
-        
-        return { ...parsed, status: 'unknown', reason: 'Unknown' };
-    }
-
-    /* --- UI Logic --- */
-    let results = [];
-
-    async function runAnalysis() {
-        const btn = document.getElementById('analyzeBtn');
-        const list = document.getElementById('resultsList');
-        btn.disabled = true;
-        btn.innerText = "Running...";
-        
-        list.innerHTML = '';
-        results = [];
-        
-        const lines = document.getElementById('inputData').value.split('\n').filter(l => l.trim());
-        const promises = lines.map(l => checkStatus(parseLine(l)));
-        const processed = await Promise.all(promises);
-        
-        processed.forEach(r => {
-            results.push(r);
-            render(r);
-        });
-        
-        updateStats();
-        btn.disabled = false;
-        btn.innerText = "Analyze";
-    }
-
-    function render(r) {
-        const div = document.createElement('div');
-        div.className = 'card-row';
-        div.onclick = () => copyToClipboard(r.raw);
-        
-        div.innerHTML = `
-            <div class="row-num">${r.num.replace(/(.{4})/g, '$1 ').trim()}</div>
-            <div class="row-status">
-                <span class="badge badge-${r.status}">${r.status}</span>
-                <div class="row-reason">${r.reason}</div>
-            </div>
-            <div class="row-details">
-                ${r.m}/${r.y} <br> ${r.cvv}
-            </div>
-        `;
-        list.prepend(div);
-    }
-
-    function updateStats() {
-        const counts = { live: 0, dead: 0, unknown: 0 };
-        results.forEach(r => counts[r.status]++);
-        
-        document.getElementById('cLive').innerText = counts.live;
-        document.getElementById('cDead').innerText = counts.dead;
-        document.getElementById('cUnknown').innerText = counts.unknown;
-    }
-
-    function copyToClipboard(text) {
-        navigator.clipboard.writeText(text);
-        showToast("Copied: " + text);
-    }
-
-    function copyBatch(status) {
-        const batch = results.filter(r => r.status === status).map(r => r.raw).join('\n');
-        if (batch) copyToClipboard(batch);
-        else showToast("No " + status + " cards");
-    }
-
-    function showToast(msg) {
-        const t = document.getElementById('toast');
-        t.innerText = msg;
-        t.classList.add('show');
-        setTimeout(() => t.classList.remove('show'), 2000);
-    }
-</script>
-</body>
-</html>
