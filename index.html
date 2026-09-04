@@ -3,122 +3,428 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZORG-Ω Pipe-Formatted Luhn Checker</title>
+  <title>CC Validator Pro</title>
   <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      background-color: #0f0f0f;
-      color: #00ff00;
+    * {
       margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
       padding: 20px;
     }
+
     .container {
-      max-width: 1000px;
+      max-width: 1200px;
       margin: 0 auto;
-      background-color: #1e1e1e;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
     }
-    h1 {
+
+    .header {
       text-align: center;
-      color: #00ff00;
+      color: white;
+      margin-bottom: 40px;
     }
+
+    .header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .header p {
+      font-size: 1.1em;
+      opacity: 0.9;
+    }
+
+    .input-section {
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .input-section label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .input-section p {
+      color: #666;
+      font-size: 0.9em;
+      margin-bottom: 15px;
+    }
+
     textarea {
       width: 100%;
-      height: 150px;
-      background-color: #2a2a2a;
-      color: #00ff00;
-      border: 1px solid #00ff00;
-      border-radius: 5px;
-      padding: 10px;
-      margin-bottom: 10px;
-      font-family: monospace;
+      height: 120px;
+      padding: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.95em;
+      resize: vertical;
+      transition: border-color 0.3s;
     }
-    button {
-      background-color: #00ff00;
-      color: #0f0f0f;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-      width: 100%;
-      margin-bottom: 10px;
+
+    textarea:focus {
+      outline: none;
+      border-color: #667eea;
     }
-    button:hover {
-      background-color: #00cc00;
-    }
-    #results {
-      width: 100%;
-      border-collapse: collapse;
+
+    .button-group {
+      display: flex;
+      gap: 10px;
       margin-top: 20px;
     }
-    #results th, #results td {
-      border: 1px solid #00ff00;
-      padding: 8px;
-      text-align: center;
+
+    button {
+      flex: 1;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 1em;
     }
-    #results th {
-      background-color: #00ff00;
-      color: #0f0f0f;
+
+    .validate-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
     }
-    #results tr:nth-child(even) {
-      background-color: #2a2a2a;
+
+    .validate-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
     }
-    .valid {
-      color: #00ff00;
+
+    .validate-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
     }
-    .invalid {
-      color: #ff0000;
+
+    .filter-btn {
+      background: #f0f0f0;
+      color: #333;
+      border: 2px solid #e0e0e0;
     }
-    .expired {
-      color: #ffcc00;
+
+    .filter-btn:hover {
+      background: #e8e8e8;
+      border-color: #667eea;
     }
-    #progress {
+
+    .filter-btn.active {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+
+    .progress {
       width: 100%;
-      height: 20px;
-      background-color: #2a2a2a;
-      border-radius: 5px;
-      margin-top: 10px;
+      height: 6px;
+      background: #e0e0e0;
+      border-radius: 10px;
+      margin-top: 20px;
       overflow: hidden;
     }
-    #progress-bar {
+
+    .progress-bar {
       height: 100%;
-      background-color: #00ff00;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
       width: 0%;
       transition: width 0.3s;
+    }
+
+    .results-section {
+      margin-top: 30px;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      color: white;
+    }
+
+    .results-header h2 {
+      font-size: 1.5em;
+    }
+
+    .stats {
+      display: flex;
+      gap: 15px;
+      font-size: 0.95em;
+    }
+
+    .stat {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 8px 15px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+    }
+
+    .stat.valid {
+      background: rgba(76, 175, 80, 0.3);
+    }
+
+    .stat.invalid {
+      background: rgba(244, 67, 54, 0.3);
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s;
+      border-left: 5px solid #667eea;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .card.valid {
+      border-left-color: #4caf50;
+    }
+
+    .card.invalid {
+      border-left-color: #f44336;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 15px;
+    }
+
+    .card-bank {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .bank-emoji {
+      font-size: 1.8em;
+    }
+
+    .bank-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .bank-name {
+      font-weight: 700;
+      color: #333;
+      font-size: 0.95em;
+    }
+
+    .bank-country {
+      font-size: 0.8em;
+      color: #999;
+    }
+
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.85em;
+    }
+
+    .status-badge.valid {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .status-badge.invalid {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    .card-number {
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+      color: #666;
+      margin-bottom: 12px;
+      word-break: break-all;
+    }
+
+    .card-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+      font-size: 0.85em;
+    }
+
+    .detail-item {
+      background: #f5f5f5;
+      padding: 8px;
+      border-radius: 8px;
+    }
+
+    .detail-label {
+      color: #999;
+      font-size: 0.8em;
+      margin-bottom: 3px;
+    }
+
+    .detail-value {
+      color: #333;
+      font-weight: 600;
+    }
+
+    .card-reason {
+      background: #f9f9f9;
+      padding: 12px;
+      border-radius: 8px;
+      border-left: 3px solid #667eea;
+      margin-top: 12px;
+    }
+
+    .reason-label {
+      font-size: 0.8em;
+      color: #999;
+      margin-bottom: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .reason-text {
+      font-size: 0.9em;
+      color: #333;
+      line-height: 1.4;
+    }
+
+    .reason-text.valid {
+      color: #2e7d32;
+    }
+
+    .reason-text.invalid {
+      color: #c62828;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: white;
+    }
+
+    .empty-state-icon {
+      font-size: 3em;
+      margin-bottom: 15px;
+    }
+
+    .empty-state p {
+      font-size: 1.1em;
+      opacity: 0.9;
+    }
+
+    @media (max-width: 768px) {
+      .cards-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .header h1 {
+        font-size: 1.8em;
+      }
+
+      .button-group {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>ZORG-Ω Pipe-Formatted Luhn Checker</h1>
-    <p>Enter pipe-formatted CC data (one per line): <code>NUMBER|MM|YYYY|CVV</code></p>
-    <textarea id="ccInput" placeholder="4867864092133670|10|2027|349
+    <div class="header">
+      <h1>💳 CC Validator Pro</h1>
+      <p>Advanced credit card validation with bank detection</p>
+    </div>
+
+    <div class="input-section">
+      <label>Paste Card Data</label>
+      <p>Supports formats: NUMBER|MM|YYYY|CVV or NUMBER|MM|YY|CVV or just NUMBER</p>
+      <textarea id="ccInput" placeholder="4867864092133670|10|2027|349
 4031631179624769|05|2025|475
 5500000000000004|12|2030|123"></textarea>
-    <button id="validateBtn">Validate</button>
-    <div id="progress">
-      <div id="progress-bar"></div>
+      <div class="button-group">
+        <button class="validate-btn" id="validateBtn">Validate Cards</button>
+        <button class="filter-btn" id="filterBtn">Show Valid Only</button>
+      </div>
+      <div class="progress">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
     </div>
-    <table id="results">
-      <thead>
-        <tr>
-          <th>Full Entry</th>
-          <th>Luhn Status</th>
-          <th>Expiry Status</th>
-        </tr>
-      </thead>
-      <tbody id="resultsBody"></tbody>
-    </table>
+
+    <div class="results-section" id="resultsSection" style="display: none;">
+      <div class="results-header">
+        <h2>Results</h2>
+        <div class="stats">
+          <div class="stat valid">✓ Valid: <span id="validCount">0</span></div>
+          <div class="stat invalid">✗ Invalid: <span id="invalidCount">0</span></div>
+          <div class="stat">Total: <span id="totalCount">0</span></div>
+        </div>
+      </div>
+      <div class="cards-grid" id="cardsGrid"></div>
+    </div>
+
+    <div class="empty-state" id="emptyState" style="display: none;">
+      <div class="empty-state-icon">📭</div>
+      <p>No results to display</p>
+    </div>
   </div>
 
   <script>
-    // Luhn Checker Function
+    // Bank detection database
+    const bankDatabase = {
+      '4': { name: 'Visa', emoji: '🏦', country: 'USA' },
+      '5': { name: 'Mastercard', emoji: '💳', country: 'USA' },
+      '3': { name: 'American Express', emoji: '🎫', country: 'USA' },
+      '6': { name: 'Discover', emoji: '🔍', country: 'USA' },
+    };
+
+    const countryEmojis = {
+      'USA': '🇺🇸',
+      'UK': '🇬🇧',
+      'CA': '🇨🇦',
+      'AU': '🇦🇺',
+      'DE': '🇩🇪',
+      'FR': '🇫🇷',
+      'JP': '🇯🇵',
+      'CN': '🇨🇳',
+      'IN': '🇮🇳',
+      'BR': '🇧🇷',
+    };
+
+    function getBankInfo(cardNumber) {
+      const firstDigit = cardNumber.charAt(0);
+      return bankDatabase[firstDigit] || { name: 'Unknown Bank', emoji: '🏧', country: 'Unknown' };
+    }
+
     function luhnCheck(cardNumber) {
       const cleaned = cardNumber.replace(/\D/g, '');
-      if (!cleaned || cleaned.length < 13 || cleaned.length > 19) return false;
+      if (!cleaned || cleaned.length < 13 || cleaned.length > 19) {
+        return { valid: false, reason: `Invalid length: ${cleaned.length} digits (13-19 required)` };
+      }
 
       let sum = 0;
       let shouldDouble = false;
@@ -135,34 +441,128 @@
         shouldDouble = !shouldDouble;
       }
 
-      return sum % 10 === 0;
+      const isValid = sum % 10 === 0;
+      return {
+        valid: isValid,
+        reason: isValid ? `Luhn checksum valid (sum: ${sum})` : `Luhn checksum failed (sum: ${sum}, not divisible by 10)`
+      };
     }
 
-    // Expiry Checker Function
     function isExpired(month, year) {
+      if (!month || !year) return { valid: true, reason: 'No expiry date provided' };
+
       const currentDate = new Date();
       const currentYear = currentDate.getFullYear();
       const currentMonth = currentDate.getMonth() + 1;
 
-      const expiryYear = parseInt(year, 10);
+      let expiryYear = parseInt(year, 10);
       const expiryMonth = parseInt(month, 10);
 
-      if (expiryYear < currentYear) return true;
-      if (expiryYear === currentYear && expiryMonth < currentMonth) return true;
-      return false;
+      // Handle 2-digit year
+      if (year.length === 2) {
+        expiryYear = expiryYear < 50 ? 2000 + expiryYear : 1900 + expiryYear;
+      }
+
+      if (expiryMonth < 1 || expiryMonth > 12) {
+        return { valid: false, reason: `Invalid month: ${month}` };
+      }
+
+      if (expiryYear < currentYear) {
+        return { valid: false, reason: `Expired: ${month}/${year} (year in past)` };
+      }
+
+      if (expiryYear === currentYear && expiryMonth < currentMonth) {
+        return { valid: false, reason: `Expired: ${month}/${year} (month in past)` };
+      }
+
+      return { valid: true, reason: `Expires: ${month}/${year}` };
     }
 
-    // Bulk Validator
+    function parseCardData(line) {
+      const parts = line.split('|').map(p => p.trim());
+      return {
+        number: parts[0] || '',
+        month: parts[1] || '',
+        year: parts[2] || '',
+        cvv: parts[3] || ''
+      };
+    }
+
+    function validateCard(line) {
+      const data = parseCardData(line);
+      const luhnResult = luhnCheck(data.number);
+      const expiryResult = isExpired(data.month, data.year);
+
+      const isValid = luhnResult.valid && expiryResult.valid;
+      const bankInfo = getBankInfo(data.number);
+
+      return {
+        original: line,
+        number: data.number,
+        month: data.month,
+        year: data.year,
+        cvv: data.cvv,
+        isValid,
+        luhnResult,
+        expiryResult,
+        bankInfo,
+        reasons: [luhnResult.reason, expiryResult.reason]
+      };
+    }
+
+    function createCardElement(result) {
+      const card = document.createElement('div');
+      card.className = `card ${result.isValid ? 'valid' : 'invalid'}`;
+      card.style.display = 'none';
+      card.dataset.valid = result.isValid;
+
+      const maskedNumber = result.number.slice(-4).padStart(result.number.length, '*');
+
+      card.innerHTML = `
+        <div class="card-header">
+          <div class="card-bank">
+            <div class="bank-emoji">${result.bankInfo.emoji}</div>
+            <div class="bank-info">
+              <div class="bank-name">${result.bankInfo.name}</div>
+              <div class="bank-country">${countryEmojis[result.bankInfo.country] || '🌍'} ${result.bankInfo.country}</div>
+            </div>
+          </div>
+          <div class="status-badge ${result.isValid ? 'valid' : 'invalid'}">
+            ${result.isValid ? '✓ Valid' : '✗ Invalid'}
+          </div>
+        </div>
+
+        <div class="card-number">${maskedNumber}</div>
+
+        <div class="card-details">
+          ${result.month ? `<div class="detail-item"><div class="detail-label">Month</div><div class="detail-value">${result.month}</div></div>` : ''}
+          ${result.year ? `<div class="detail-item"><div class="detail-label">Year</div><div class="detail-value">${result.year}</div></div>` : ''}
+          ${result.cvv ? `<div class="detail-item"><div class="detail-label">CVV</div><div class="detail-value">***</div></div>` : ''}
+        </div>
+
+        <div class="card-reason">
+          <div class="reason-label">Validation Details</div>
+          ${result.reasons.map(reason => `<div class="reason-text ${result.isValid ? 'valid' : 'invalid'}">• ${reason}</div>`).join('')}
+        </div>
+      `;
+
+      return card;
+    }
+
     async function bulkValidate() {
       const input = document.getElementById('ccInput').value.trim();
       const lines = input.split('\n').map(line => line.trim()).filter(line => line);
-      const resultsBody = document.getElementById('resultsBody');
-      const progressBar = document.getElementById('progress-bar');
+      const cardsGrid = document.getElementById('cardsGrid');
+      const progressBar = document.getElementById('progressBar');
       const validateBtn = document.getElementById('validateBtn');
+      const resultsSection = document.getElementById('resultsSection');
+      const emptyState = document.getElementById('emptyState');
 
-      resultsBody.innerHTML = '';
+      cardsGrid.innerHTML = '';
       validateBtn.disabled = true;
       progressBar.style.width = '0%';
+      resultsSection.style.display = 'none';
+      emptyState.style.display = 'none';
 
       if (lines.length === 0) {
         alert('No data provided.');
@@ -170,53 +570,60 @@
         return;
       }
 
-      const batchSize = 100;
+      const batchSize = 50;
       const total = lines.length;
       let processed = 0;
+      let validCount = 0;
+      let invalidCount = 0;
 
       for (let i = 0; i < total; i += batchSize) {
         const batch = lines.slice(i, i + batchSize);
 
         for (const line of batch) {
-          const parts = line.split('|');
-          const number = parts[0] || '';
-          const month = parts[1] || '';
-          const year = parts[2] || '';
-          const cvv = parts[3] || '';
+          const result = validateCard(line);
+          const cardElement = createCardElement(result);
+          cardsGrid.appendChild(cardElement);
 
-          const isLuhnValid = luhnCheck(number);
-          const isExpiryValid = !isExpired(month, year);
-
-          const row = document.createElement('tr');
-          const entryCell = document.createElement('td');
-          const luhnCell = document.createElement('td');
-          const expiryCell = document.createElement('td');
-
-          entryCell.textContent = line;
-          luhnCell.textContent = isLuhnValid ? 'Valid' : 'Invalid';
-          luhnCell.className = isLuhnValid ? 'valid' : 'invalid';
-
-          expiryCell.textContent = isExpiryValid ? 'Valid' : 'Expired';
-          expiryCell.className = isExpiryValid ? 'valid' : 'expired';
-
-          row.appendChild(entryCell);
-          row.appendChild(luhnCell);
-          row.appendChild(expiryCell);
-          resultsBody.appendChild(row);
+          if (result.isValid) validCount++;
+          else invalidCount++;
         }
 
         processed += batch.length;
         progressBar.style.width = `${(processed / total) * 100}%`;
 
-        // Yield control to avoid freezing the browser
         await new Promise(resolve => setTimeout(resolve, 0));
       }
 
+      document.getElementById('validCount').textContent = validCount;
+      document.getElementById('invalidCount').textContent = invalidCount;
+      document.getElementById('totalCount').textContent = total;
+
+      // Show all cards initially
+      document.querySelectorAll('.card').forEach(card => card.style.display = '');
+
+      resultsSection.style.display = 'block';
       validateBtn.disabled = false;
+      progressBar.style.width = '0%';
     }
 
-    // Event Listener
+    function toggleFilter() {
+      const filterBtn = document.getElementById('filterBtn');
+      const cards = document.querySelectorAll('.card');
+      const showValidOnly = filterBtn.classList.toggle('active');
+
+      cards.forEach(card => {
+        if (showValidOnly) {
+          card.style.display = card.dataset.valid === 'true' ? '' : 'none';
+        } else {
+          card.style.display = '';
+        }
+      });
+
+      filterBtn.textContent = showValidOnly ? 'Show All' : 'Show Valid Only';
+    }
+
     document.getElementById('validateBtn').addEventListener('click', bulkValidate);
+    document.getElementById('filterBtn').addEventListener('click', toggleFilter);
   </script>
 </body>
 </html>
