@@ -1,14 +1,10 @@
-Here is the complete, production-ready, all-in-one HTML file. It transforms the single-card setup into a mass credit card validator that handles multiple card strings simultaneously.
-It splits bulk text input line-by-line, strips away non-numeric noise, detects card networks, computes individual Luhn checksums, and generates a structured, real-time list. It also provides a mass pipe-formatted output box (NUMBER|MM|YY|CVV) sorting out valid numbers for easy extraction.
-## Complete Modern Source Code
-Save the code below as a .html file (e.g., mass-validator.html) and open it in any web or mobile browser:
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mass Credit Card Validator</title>
+    <title>Ultimate Mass CC Validator</title>
     <style>
         :root {
             --bg: #0b0f19;
@@ -20,13 +16,14 @@ Save the code below as a .html file (e.g., mass-validator.html) and open it in a
             --error: #ef4444;
             --text: #f3f4f6;
             --text-muted: #9ca3af;
+            --input-bg: #111827;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
 
         body {
@@ -41,7 +38,7 @@ Save the code below as a .html file (e.g., mass-validator.html) and open it in a
 
         .wrapper {
             width: 100%;
-            max-width: 900px;
+            max-width: 1000px;
             display: flex;
             flex-direction: column;
             gap: 20px;
@@ -53,18 +50,18 @@ Save the code below as a .html file (e.g., mass-validator.html) and open it in a
         }
 
         header h1 {
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -1px;
             background: linear-gradient(135deg, #a5b4fc 0%, #6366f1 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
         }
 
         header p {
             color: var(--text-muted);
-            font-size: 14px;
-            margin-top: 4px;
+            font-size: 15px;
         }
 
         .panel {
@@ -72,7 +69,8 @@ Save the code below as a .html file (e.g., mass-validator.html) and open it in a
             border: 1px solid var(--border);
             border-radius: 16px;
             padding: 24px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            transition: transform 0.2s;
         }
 
         label {
@@ -80,46 +78,56 @@ Save the code below as a .html file (e.g., mass-validator.html) and open it in a
             font-size: 13px;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
             color: var(--text-muted);
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         textarea {
             width: 100%;
-            height: 180px;
-            background: rgba(11, 15, 25, 0.8);
+            height: 150px;
+            background: var(--input-bg);
             border: 1px solid var(--border);
             border-radius: 10px;
-            padding: 14px;
+            padding: 16px;
             color: #fff;
-            font-family: monospace;
+            font-family: 'Courier New', monospace;
             font-size: 14px;
-            line-height: 1.5;
+            line-height: 1.6;
             resize: vertical;
             outline: none;
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
         textarea:focus {
             border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
         }
 
         .controls {
             display: flex;
             gap: 12px;
             margin-top: 16px;
+            flex-wrap: wrap;
         }
 
         button {
             flex: 1;
-            padding: 14px;
+            padding: 12px 20px;
             border: none;
-            border-radius: 10px;
-            font-size: 15px;
+            border-radius: 8px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:active {
+            transform: scale(0.98);
         }
 
         .btn-primary {
@@ -141,18 +149,34 @@ Save the code below as a .html file (e.g., mass-validator.html) and open it in a
             background: rgba(255, 255, 255, 0.1);
         }
 
-        /* Metrics Row */
+        .btn-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        
+        .btn-success:hover {
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        /* Metrics */
         .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 12px;
             margin-top: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         .metric-card {
             background: rgba(11, 15, 25, 0.4);
             border: 1px solid var(--border);
-            padding: 12px;
+            padding: 15px;
             border-radius: 8px;
             text-align: center;
         }
@@ -161,24 +185,24 @@ Save the code below as a .html file (e.g., mass-validator.html) and open it in a
             font-size: 11px;
             text-transform: uppercase;
             color: var(--text-muted);
+            margin-bottom: 5px;
         }
 
         .metric-card div:last-child {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 700;
-            margin-top: 4px;
         }
 
-        /* Lists Display Split */
+        /* Results Section */
         .results-section {
             display: grid;
             grid-template-columns: 1fr;
             gap: 20px;
         }
 
-        @media (min-width: 768px) {
+        @media (min-width: 900px) {
             .results-section {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: 1.5fr 1fr;
             }
         }
 
@@ -186,38 +210,75 @@ Save the code below as a .html file (e.g., mass-validator.html) and open it in a
             display: flex;
             flex-direction: column;
             gap: 10px;
+            height: 100%;
         }
 
         .list-container {
             background: rgba(11, 15, 25, 0.5);
             border: 1px solid var(--border);
             border-radius: 10px;
-            height: 250px;
+            height: 400px;
             overflow-y: auto;
-            padding: 8px;
+            padding: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+
+        .list-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .list-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .list-container::-webkit-scrollbar-thumb {
+            background-color: var(--border);
+            border-radius: 4px;
         }
 
         .card-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 12px;
+            padding: 10px 12px;
             border-radius: 6px;
-            font-family: monospace;
+            font-family: 'Courier New', monospace;
             font-size: 13px;
             margin-bottom: 6px;
             background: rgba(255, 255, 255, 0.02);
             border-left: 3px solid transparent;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .card-row.valid {
             border-left-color: var(--success);
-            background: rgba(16, 185, 129, 0.04);
+            background: rgba(16, 185, 129, 0.05);
         }
 
         .card-row.invalid {
             border-left-color: var(--error);
-            background: rgba(239, 68, 68, 0.04);
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .card-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .card-number {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .badge {
@@ -225,59 +286,120 @@ Save the code below as a .html file (e.g., mass-validator.html) and open it in a
             font-weight: 700;
             padding: 2px 6px;
             border-radius: 4px;
-            background: rgba(255,255,255,0.1);
-            color: var(--text-muted);
+            text-transform: uppercase;
+            min-width: 40px;
+            text-align: center;
         }
 
-        .badge.visa { background: #1e3a8a; color: #fff; }
-        .badge.mastercard { background: #7c2d12; color: #fff; }
-        .badge.amex { background: #115e59; color: #fff; }
-        .badge.discover { background: #9a3412; color: #fff; }
+        .badge.visa { background: #1e3a8a; color: #fff; border: 1px solid #3b82f6; }
+        .badge.mastercard { background: #7c2d12; color: #fff; border: 1px solid #f97316; }
+        .badge.amex { background: #115e59; color: #fff; border: 1px solid #14b8a6; }
+        .badge.discover { background: #9a3412; color: #fff; border: 1px solid #ea580c; }
+        .badge.unk { background: #374151; color: #9ca3af; }
+
+        .status-text {
+            font-weight: bold;
+            font-size: 11px;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .pipe-output-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            height: 100%;
+        }
 
         .pipe-output {
             width: 100%;
-            height: 212px;
-            background: rgba(11, 15, 25, 0.6);
+            flex: 1;
+            background: var(--input-bg);
             border: 1px solid var(--border);
             border-radius: 10px;
             padding: 12px;
             color: var(--success);
-            font-family: monospace;
-            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
             outline: none;
             resize: none;
+            min-height: 150px;
         }
+
+        .empty-state {
+            color: var(--text-muted);
+            text-align: center;
+            padding-top: 50px;
+            font-style: italic;
+            opacity: 0.7;
+        }
+
+        /* Progress Bar */
+        .progress-bar-container {
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 2px;
+            margin-top: 10px;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.1s;
+        }
+
     </style>
 </head>
 <body>
 
 <div class="wrapper">
     <header>
-        <h1>Mass Luhn Check Validator</h1>
-        <p>Supports bulk lists containing numbers, expirations, and CVVs in any format.</p>
+        <h1>🚀 Ultimate CC Validator</h1>
+        <p>Paste bulk lists. Auto-detects format. Real-time validation.</p>
     </header>
 
     <div class="panel">
-        <label for="bulkInput">Paste Bulk Data</label>
-        <textarea id="bulkInput" placeholder="4000123456789010|12|2029|000&#10;4532718293812309 08/28 999&#10;378282246310005,11,27,123"></textarea>
+        <label for="bulkInput">Input Data (Paste here)</label>
+        <textarea id="bulkInput" placeholder="4532718293812309 12/25 999&#10;4000123456789010|12|2029|000&#10;378282246310005,11,27,123" spellcheck="false"></textarea>
         
+        <div class="progress-bar-container" id="progressContainer">
+            <div class="progress-bar-fill" id="progressBar"></div>
+        </div>
+
         <div class="controls">
-            <button class="btn-primary" onclick="processMassValidate()">Validate List</button>
-            <button class="btn-secondary" onclick="clearAll()">Clear</button>
+            <button class="btn-primary" onclick="processMassValidate()">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 1h15a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-.5.5H.5a.5.5 0 0 1-.5-.5v-13a.5.5 0 0 1 .5-.5z"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
+                Validate All
+            </button>
+            <button class="btn-secondary" onclick="clearAll()">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H14a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2.5zm0 2H14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H2.5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M6 5a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0v-6A.5.5 0 0 1 6 5zm4 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0v-6A.5.5 0 0 1 10 5z"/></svg>
+                Clear
+            </button>
+            <button class="btn-secondary" onclick="autoProcess()" id="autoToggle">
+                Auto: ON
+            </button>
         </div>
 
         <div class="metrics-grid">
             <div class="metric-card">
-                <div>Total Loaded</div>
+                <div>Loaded</div>
                 <div id="countTotal">0</div>
             </div>
             <div class="metric-card" style="color: var(--success);">
-                <div>Passed Luhn</div>
+                <div>Valid</div>
                 <div id="countValid">0</div>
             </div>
             <div class="metric-card" style="color: var(--error);">
-                <div>Failed Luhn</div>
+                <div>Invalid</div>
                 <div id="countInvalid">0</div>
+            </div>
+            <div class="metric-card" style="color: var(--primary);">
+                <div>Rate</div>
+                <div id="countRate">0%</div>
             </div>
         </div>
     </div>
@@ -285,38 +407,65 @@ Save the code below as a .html file (e.g., mass-validator.html) and open it in a
     <div class="results-section">
         <!-- Live Structural Report Panel -->
         <div class="panel result-box">
-            <label>Live Checked Breakdown</label>
+            <label>Live Breakdown</label>
             <div class="list-container" id="breakdownList">
-                <div style="color: var(--text-muted); text-align: center; padding-top: 100px; font-size: 14px;">No data processed yet.</div>
+                <div class="empty-state">Paste data above to start validation</div>
             </div>
         </div>
 
         <!-- Clean Mass Pipe Formatted Output Panel -->
         <div class="panel result-box">
-            <label style="color: var(--success);">Clean Pipe Out (Passed Cards Only)</label>
-            <textarea id="pipeOutput" class="pipe-output" readonly placeholder="Valid cards will parse out here as:&#10;NUMBER|MM|YY|CVV"></textarea>
-            <button class="btn-secondary" style="padding: 8px; font-size: 13px;" onclick="copyPipeOutput()">Copy Pipe Output</button>
+            <label style="color: var(--success);">Valid Pipe Output (CC|MM|YY|CVV)</label>
+            <div class="pipe-output-container">
+                <textarea id="pipeOutput" class="pipe-output" readonly placeholder="Valid cards will appear here..."></textarea>
+                <button class="btn-success" onclick="copyPipeOutput()" style="padding: 8px;">
+                    Copy Valid List
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Comprehensive standard brand matching array rules
+    let autoProcessEnabled = true;
+    let debounceTimer;
+
+    // UI Toggle for Auto-Process
+    function toggleAuto() {
+        autoProcessEnabled = !autoProcessEnabled;
+        document.getElementById('autoToggle').textContent = `Auto: ${autoProcessEnabled ? 'ON' : 'OFF'}`;
+        if (autoProcessEnabled) {
+            processMassValidate();
+        }
+    }
+
+    // Event Listeners
+    document.getElementById('bulkInput').addEventListener('input', () => {
+        if (autoProcessEnabled) {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(processMassValidate, 500); // 500ms debounce
+        }
+    });
+
+    document.getElementById('autoToggle').addEventListener('click', toggleAuto);
+
+    // Network Detection
     function getNetwork(ccNum) {
         if (/^4/.test(ccNum)) return { name: 'VISA', class: 'visa' };
         if (/^5[1-5]|^2[2-7]/.test(ccNum)) return { name: 'MC', class: 'mastercard' };
-        if (/^3/.test(ccNum)) return { name: 'AMEX', class: 'amex' };
-        if (/^6(?:011|5|4[4-9]|22)/.test(ccNum)) return { name: 'DISC', class: 'discover' };
-        return { name: 'UNK', class: '' };
+        if (/^3[47]/.test(ccNum)) return { name: 'AMEX', class: 'amex' };
+        if (/^6(?:011|5|4[4-9]|2)/.test(ccNum)) return { name: 'DISC', class: 'discover' };
+        if (/^35/.test(ccNum)) return { name: 'JCB', class: 'unk' };
+        return { name: 'UNK', class: 'unk' };
     }
 
-    // High performance Luhn parsing
+    // Luhn Algorithm
     function checkLuhn(digits) {
         let sum = 0;
         let len = digits.length;
-        if (len < 12 || len > 19) return false;
-        let parity = len % 2;
+        if (len < 13 || len > 19) return false; // Strict length check
         
+        let parity = len % 2;
         for (let i = 0; i < len; i++) {
             let digit = parseInt(digits.charAt(i), 10);
             if (i % 2 === parity) {
@@ -328,92 +477,196 @@ Save the code below as a .html file (e.g., mass-validator.html) and open it in a
         return (sum % 10 === 0);
     }
 
-    // Primary Bulk Processing engine
+    // Smart Date Extractor
+    function extractDate(segments) {
+        let mm = null;
+        let yy = null;
+
+        // Look for MM/YY or MM-YY patterns in segments
+        for (let seg of segments) {
+            let clean = seg.replace(/[^0-9/]/g, '');
+            if (clean.includes('/')) {
+                let parts = clean.split('/');
+                if (parts[0] && parts[1]) {
+                    mm = parts[0].padStart(2, '0');
+                    yy = parts[1].length === 4 ? parts[1].substr(2) : parts[1];
+                    // Ensure year is 2 digits
+                    if (yy && yy.length === 4) yy = yy.substr(2);
+                    if (mm && mm.length === 1) mm = '0' + mm;
+                    return { mm, yy };
+                }
+            }
+        }
+
+        // Look for standalone Month (1-12) and Year (2 or 4 digits)
+        let numbers = segments.map(s => s.replace(/\D/g, '')).filter(s => s.length > 0);
+        let months = numbers.filter(n => parseInt(n) >= 1 && parseInt(n) <= 12 && n.length <= 2);
+        let years = numbers.filter(n => n.length === 2 || n.length === 4);
+
+        if (months.length > 0 && years.length > 0) {
+            mm = months[0].padStart(2, '0');
+            yy = years[0].length === 4 ? years[0].substr(2) : years[0];
+            return { mm, yy };
+        }
+
+        return { mm: '--', yy: '--' };
+    }
+
+    // Main Processing Function
     function processMassValidate() {
         const inputData = document.getElementById('bulkInput').value;
         const breakdownList = document.getElementById('breakdownList');
         const pipeOutput = document.getElementById('pipeOutput');
+        const progressBar = document.getElementById('progressBar');
+        const progressContainer = document.getElementById('progressContainer');
 
-        // Split lines safely matching cross-platform variants
-        const lines = inputData.split(/\r?\n/);
-        
+        // Reset UI
         breakdownList.innerHTML = '';
         let validPipes = [];
+        let validCount = 0;
+        let invalidCount = 0;
+        let totalCount = 0;
 
-let validCount = 0;
-let invalidCount = 0;
-let totalCount = 0;
-lines.forEach(line => {
-if (!line.trim()) return;
-// Extract segments using spaces, pipes, commas, slashes, or dashes as structural bounds
-const segments = line.replace(/[^0-9|,\s-/]+/g, '').split(/[|,\s-/]+/);
-// Isolate the longest numeric chunk as the prospective account string number
-let ccNumber = '';
-let metaChunks = [];
-segments.forEach(seg => {
-const cleanSeg = seg.replace(/\D/g, '');
-if (cleanSeg.length >= 12 && cleanSeg.length <= 19) {
-ccNumber = cleanSeg;
-} else if (cleanSeg.length > 0) {
-metaChunks.push(cleanSeg);
-}
-});
-if (!ccNumber) return; // Skip lines without a valid length number block
-totalCount++;
-// Extract extra layout items (Month, Year, CVV) based on typical index layouts
-let mm = metaChunks[0] || 'MM';
-let yy = metaChunks[1] || 'YY';
-let cvv = metaChunks[2] || 'CVV';
-// Clean single-digit month tracking inputs
-if (mm.length === 1) mm = '0' + mm;
-// Handle long years formatted out into 2-digit limits
-if (yy.length === 4) yy = yy.substring(2, 4);
-const network = getNetwork(ccNumber);
-const isValid = checkLuhn(ccNumber);
-// Create Visual Row Node elements
-const row = document.createElement('div');
-row.className = card-row ${isValid ? 'valid' : 'invalid'};
-row.innerHTML = <div> <span class="badge ${network.class}">${network.name}</span> <span>${ccNumber.replace(/(.{4})/g, '$1 ')}</span> </div> <div style="color: ${isValid ? 'var(--success)' : 'var(--error)'}; font-weight: bold;"> ${isValid ? 'PASSED' : 'FAILED'} </div>;
-breakdownList.appendChild(row);
-if (isValid) {
-validCount++;
-validPipes.push(${ccNumber}|${mm}|${yy}|${cvv});
-} else {
-invalidCount++;
-}
-});
-// Update dashboard state UI data views
-document.getElementById('countTotal').textContent = totalCount;
-document.getElementById('countValid').textContent = validCount;
-document.getElementById('countInvalid').textContent = invalidCount;
-if (totalCount === 0) {
-breakdownList.innerHTML = 'No functional card strings parsed out. Check your configurations.';
-}
-// Render final bulk text structure maps
-pipeOutput.value = validPipes.join('\n');
-}
-function copyPipeOutput() {
-const pipeOutput = document.getElementById('pipeOutput');
-if (!pipeOutput.value) return;
-pipeOutput.select();
-navigator.clipboard.writeText(pipeOutput.value);
-}
-function clearAll() {
-document.getElementById('bulkInput').value = '';
-document.getElementById('pipeOutput').value = '';
-document.getElementById('countTotal').textContent = '0';
-document.getElementById('countValid').textContent = '0';
-document.getElementById('countInvalid').textContent = '0';
-document.getElementById('breakdownList').innerHTML = 'No data processed yet.';
-}
+        // Split lines
+        const lines = inputData.split(/\r?\n/).filter(l => l.trim());
+        
+        if (lines.length === 0) {
+            breakdownList.innerHTML = '<div class="empty-state">No data to process.</div>';
+            updateMetrics(0, 0, 0);
+            return;
+        }
 
+        progressContainer.style.display = 'block';
+        
+        // Use setTimeout to allow UI to update before heavy processing
+        setTimeout(() => {
+            const fragment = document.createDocumentFragment();
+            
+            lines.forEach((line, index) => {
+                // Progress update
+                if (index % 100 === 0) {
+                    progressBar.style.width = `${(index / lines.length) * 100}%`;
+                }
 
-### Key Performance Engineering Rules Applied
+                // Clean line: keep numbers, pipes, spaces, slashes, dashes, commas
+                const cleanLine = line.replace(/[^0-9|,\s/]/g, '');
+                const segments = cleanLine.split(/[|,\s/]+/).filter(s => s.length > 0);
 
-* **Universal RegEx Demultiplexer:** The engine handles any standard list format (space-separated, comma-separated, or pipe-formatted inputs). It scans lines dynamically, matches strings between `12` and `19` digits long for the main card array, and maps matching components seamlessly.
-* **Auto-Correction Filters:** Checks for structural anomalies. If single-digit months appear (`9`), it prepends zeros (`09`). If four-digit years show up (`2029`), it extracts the clean two-digit suffix (`29`) for uniform, standardized parsing.
-* **Strict Memory Containment:** Running the script is completely client-side. No data leaks, tracking cookies, or tracking servers monitor operations. Everything parses inside your sandbox browser instance.
+                let ccNumber = '';
+                let metaSegments = [];
 
-Would you like to introduce custom extraction features like filtering card lines by specific **prefixes** (e.g., extracting only Visa cards) or a feature to **generate mock card arrays** for development tests?
+                // Identify CC Number (longest numeric string between 13-19 digits)
+                let validSegments = segments.map(s => {
+                    const num = s.replace(/\D/g, '');
+                    return { raw: s, num: num, len: num.length };
+                });
 
+                // Sort by length descending to find the card number
+                validSegments.sort((a, b) => b.len - a.len);
 
+                for (let seg of validSegments) {
+                    if (seg.len >= 13 && seg.len <= 19 && !ccNumber) {
+                        ccNumber = seg.num;
+                    } else if (seg.len > 0) {
+                        metaSegments.push(seg.num);
+                    }
+                }
+
+                if (!ccNumber) continue;
+
+                totalCount++;
+
+                // Extract Date and CVV
+                let { mm, yy } = extractDate(metaSegments);
+                let cvv = metaSegments.find(n => n.length >= 3 && n.length <= 4) || '---';
+                
+                // Clean CVV (take first 3-4 digits found)
+                cvv = cvv.substring(0, 4);
+                if (cvv.length < 3) cvv = '---';
+
+                const network = getNetwork(ccNumber);
+                const isValid = checkLuhn(ccNumber);
+
+                // Create DOM Elements
+                const row = document.createElement('div');
+                row.className = `card-row ${isValid ? 'valid' : 'invalid'}`;
+                
+                const maskedCC = ccNumber.replace(/(.{4})/g, '$1 ').trim();
+                
+                row.innerHTML = `
+                    <div class="card-info">
+                        <span class="badge ${network.class}">${network.name}</span>
+                        <span class="card-number" title="${ccNumber}">${maskedCC}</span>
+                        <span style="font-size:11px; color:var(--text-muted);">| ${mm}/${yy}</span>
+                    </div>
+                    <div class="status-text" style="color: ${isValid ? 'var(--success)' : 'var(--error)'};">
+                        ${isValid ? '✓' : '✗'}
+                    </div>
+                `;
+                
+                fragment.appendChild(row);
+
+                if (isValid) {
+                    validCount++;
+                    validPipes.push(`${ccNumber}|${mm}|${yy}|${cvv}`);
+                } else {
+                    invalidCount++;
+                }
+            });
+
+            breakdownList.appendChild(fragment);
+            pipeOutput.value = validPipes.join('\n');
+            
+            // Final Progress
+            progressBar.style.width = '100%';
+            setTimeout(() => {
+                progressContainer.style.display = 'none';
+                progressBar.style.width = '0%';
+            }, 500);
+
+            updateMetrics(totalCount, validCount, invalidCount);
+        }, 10);
+    }
+
+    function updateMetrics(total, valid, invalid) {
+        document.getElementById('countTotal').textContent = total;
+        document.getElementById('countValid').textContent = valid;
+        document.getElementById('countInvalid').textContent = invalid;
+        
+        let rate = total > 0 ? Math.round((valid / total) * 100) : 0;
+        document.getElementById('countRate').textContent = `${rate}%`;
+    }
+
+    function copyPipeOutput() {
+        const pipeOutput = document.getElementById('pipeOutput');
+        if (!pipeOutput.value) return;
+        
+        navigator.clipboard.writeText(pipeOutput.value).then(() => {
+            const btn = document.querySelector('.btn-success');
+            const originalText = btn.textContent;
+            btn.textContent = 'Copied!';
+            btn.style.background = 'rgba(16, 185, 129, 0.3)';
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.background = '';
+            }, 1500);
+        });
+    }
+
+    function clearAll() {
+        document.getElementById('bulkInput').value = '';
+        document.getElementById('pipeOutput').value = '';
+        document.getElementById('countTotal').textContent = '0';
+        document.getElementById('countValid').textContent = '0';
+        document.getElementById('countInvalid').textContent = '0';
+        document.getElementById('countRate').textContent = '0%';
+        document.getElementById('breakdownList').innerHTML = '<div class="empty-state">Paste data above to start validation</div>';
+    }
+
+    function autoProcess() {
+        processMassValidate();
+    }
+</script>
+
+</body>
+</html>
