@@ -4,450 +4,258 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BIN & Luhn Bulk Checker</title>
+    <title>CC Luhn Checker</title>
     <style>
         :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-color: #e0e0e0;
-            --accent: #00adb5;
-            --accent-hover: #008c93;
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --text: #e0e0e0;
+            --accent: #007aff;
+            --valid: #34c759;
+            --dead: #ff3b30;
+            --unknown: #ffcc00;
             --border: #333;
-            --success: #00c853;
-            --error: #d50000;
-            --input-bg: #2c2c2c;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            padding: 10px;
-            padding-bottom: 80px; /* Space for fixed button */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 15px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
         }
 
         h1 {
             font-size: 1.2rem;
             text-align: center;
-            margin-bottom: 15px;
+            margin: 0 0 10px 0;
             color: var(--accent);
-            font-weight: 600;
         }
 
-        .container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        label {
-            font-size: 0.85rem;
-            color: #aaa;
+        .input-section {
+            flex: 0 0 auto;
+            margin-bottom: 10px;
         }
 
         textarea {
             width: 100%;
-            height: 120px;
-            background-color: var(--input-bg);
+            height: 100px;
+            background-color: var(--surface);
+            color: var(--text);
             border: 1px solid var(--border);
             border-radius: 8px;
-            color: var(--text-color);
             padding: 10px;
-            font-size: 0.9rem;
-            resize: vertical;
             font-family: monospace;
+            font-size: 14px;
+            resize: vertical;
+            box-sizing: border-box;
         }
 
-        textarea:focus, input:focus {
-            outline: 2px solid var(--accent);
-            border-color: transparent;
-        }
-
-        input[type="text"] {
+        button#check-btn {
             width: 100%;
             padding: 12px;
-            background-color: var(--input-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-color);
-            font-size: 1rem;
-        }
-
-        .btn {
+            margin-top: 10px;
             background-color: var(--accent);
             color: white;
             border: none;
-            padding: 12px 20px;
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            width: 100%;
-            transition: background 0.2s;
         }
 
-        .btn:active {
-            background-color: var(--accent-hover);
-            transform: scale(0.98);
+        button#check-btn:active {
+            opacity: 0.8;
         }
 
-        .btn:disabled {
-            background-color: #555;
-            cursor: not-allowed;
+        .output-container {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+            min-height: 0; /* Important for flex scrolling */
         }
 
-        .results-area {
-            margin-top: 15px;
+        .col {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-        }
-
-        .result-card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border);
+            background-color: var(--surface);
             border-radius: 8px;
-            padding: 12px;
-            font-size: 0.85rem;
-            word-break: break-all;
+            overflow: hidden;
+            border: 1px solid var(--border);
         }
 
-        .result-header {
+        .col-header {
+            padding: 8px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            text-align: center;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
-            border-bottom: 1px solid #333;
-            padding-bottom: 5px;
         }
 
-        .result-bin {
-            font-weight: bold;
-            color: var(--accent);
-        }
+        .col.valid .col-header { background-color: rgba(52, 199, 89, 0.2); color: var(--valid); }
+        .col.dead .col-header { background-color: rgba(255, 59, 48, 0.2); color: var(--dead); }
+        .col.unknown .col-header { background-color: rgba(255, 204, 0, 0.2); color: var(--unknown); }
 
-        .result-status {
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: bold;
-        }
-
-        .status-valid { background-color: rgba(0, 200, 83, 0.2); color: var(--success); }
-        .status-invalid { background-color: rgba(213, 0, 0, 0.2); color: var(--error); }
-        .status-pending { background-color: rgba(255, 193, 7, 0.2); color: #ffc107; }
-
-        .details-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .detail-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .detail-label {
-            font-size: 0.7rem;
-            color: #888;
-            text-transform: uppercase;
-        }
-
-        .detail-value {
-            font-weight: 500;
-        }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            display: none;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--accent);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        .stats {
-            text-align: center;
+        .col-header span {
             font-size: 0.8rem;
-            color: #888;
-            margin-top: 10px;
+            opacity: 0.8;
         }
 
-        /* Toast Notification */
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #333;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-            z-index: 2000;
+        .copy-btn {
+            background: none;
+            border: 1px solid currentColor;
+            color: inherit;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            cursor: pointer;
         }
-        .toast.show { opacity: 1; }
 
+        .col-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 5px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .card-line {
+            padding: 4px 6px;
+            border-bottom: 1px solid #333;
+            word-break: break-all;
+        }
+
+        .card-line:last-child {
+            border-bottom: none;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--surface);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body>
 
-    <h1>BIN & Luhn Checker</h1>
+    <h1>CC Luhn Checker</h1>
 
-    <div class="container">
-        <!-- Single Card Mode -->
-        <div class="input-group">
-            <label for="single-bin">Single BIN Check</label>
-            <input type="text" id="single-bin" placeholder="Enter BIN (e.g., 411111)" maxlength="6">
-            <button class="btn" id="btn-check-single" onclick="checkSingleBin()">Check</button>
-        </div>
-
-        <hr style="border-color: #333; margin: 10px 0;">
-
-        <!-- Bulk Mode -->
-        <div class="input-group">
-            <label for="bulk-input">Bulk BINs (one per line)</label>
-            <textarea id="bulk-input" placeholder="411111&#10;510510&#10;371449"></textarea>
-            <button class="btn" id="btn-bulk" onclick="checkBulk()">Check All</button>
-        </div>
-
-        <div class="results-area" id="results-container">
-            <!-- Results will appear here -->
-        </div>
-
-        <div class="stats" id="stats-display"></div>
+    <div class="input-section">
+        <textarea id="input-cc" placeholder="Paste CCs here (one per line)..."></textarea>
+        <button id="check-btn">CHECK</button>
     </div>
 
-    <div class="loading-overlay" id="loader">
-        <div class="spinner"></div>
-    </div>
+    <div class="output-container">
+        <!-- Valid -->
+        <div class="col valid">
+            <div class="col-header">
+                Valid
+                <button class="copy-btn" onclick="copyCol('out-valid')">Copy</button>
+            </div>
+            <div id="out-valid" class="col-content"></div>
+        </div>
 
-    <div class="toast" id="toast">Copied to clipboard!</div>
+        <!-- Dead -->
+        <div class="col dead">
+            <div class="col-header">
+                Dead
+                <button class="copy-btn" onclick="copyCol('out-dead')">Copy</button>
+            </div>
+            <div id="out-dead" class="col-content"></div>
+        </div>
+
+        <!-- Unknown -->
+        <div class="col unknown">
+            <div class="col-header">
+                Unknown/Format
+                <button class="copy-btn" onclick="copyCol('out-unknown')">Copy</button>
+            </div>
+            <div id="out-unknown" class="col-content"></div>
+        </div>
+    </div>
 
     <script>
-        // Configuration
-        const API_BASE = "https://api.freebinchecker.com/bin/";
-        
-        // DOM Elements
-        const singleInput = document.getElementById('single-bin');
-        const bulkInput = document.getElementById('bulk-input');
-        const resultsContainer = document.getElementById('results-container');
-        const loader = document.getElementById('loader');
-        const statsDisplay = document.getElementById('stats-display');
-        const toast = document.getElementById('toast');
+        document.getElementById('check-btn').addEventListener('click', function() {
+            const input = document.getElementById('input-cc').value;
+            const lines = input.split(/\n/);
+            
+            const validEl = document.getElementById('out-valid');
+            const deadEl = document.getElementById('out-dead');
+            const unknownEl = document.getElementById('out-unknown');
 
-        // Utility: Show Toast
-        function showToast(msg) {
-            toast.textContent = msg;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2000);
-        }
+            validEl.innerHTML = '';
+            deadEl.innerHTML = '';
+            unknownEl.innerHTML = '';
 
-        // Utility: Show/Hide Loader
-        function setLoading(isLoading) {
-            loader.style.display = isLoading ? 'flex' : 'none';
-        }
+            lines.forEach(line => {
+                let cc = line.trim();
+                if (!cc) return;
 
-        // Utility: Format Result Card
-        function createResultCard(bin, data, isLuhnValid) {
-            const card = document.createElement('div');
-            card.className = 'result-card';
-
-            // Determine status
-            const statusClass = isLuhnValid ? 'status-valid' : 'status-invalid';
-            const statusText = isLuhnValid ? 'VALID Luhn' : 'INVALID Luhn';
-
-            // Handle missing data gracefully
-            const scheme = data?.card?.scheme || 'Unknown';
-            const type = data?.card?.type || 'Unknown';
-            const issuer = data?.issuer?.name || 'Unknown Issuer';
-            const country = data?.country?.name || 'Unknown Country';
-            const currency = data?.country?.currency || 'N/A';
-
-            card.innerHTML = `
-                <div class="result-header">
-                    <span class="result-bin">${bin}</span>
-                    <span class="result-status ${statusClass}">${statusText}</span>
-                </div>
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <span class="detail-label">Scheme</span>
-                        <span class="detail-value">${scheme}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Type</span>
-                        <span class="detail-value">${type}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Issuer</span>
-                        <span class="detail-value">${issuer}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Country</span>
-                        <span class="detail-value">${country}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Currency</span>
-                        <span class="detail-value">${currency}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Length</span>
-                        <span class="detail-value">${data?.card?.number_length || 'N/A'}</span>
-                    </div>
-                </div>
-                <div style="margin-top:8px; display:flex; justify-content:flex-end;">
-                    <button style="background:none; border:1px solid #555; color:#888; padding:2px 8px; border-radius:4px; font-size:0.7rem; cursor:pointer;" onclick="copyBin('${bin}')">Copy</button>
-                </div>
-            `;
-            return card;
-        }
-
-        // Core: Fetch Logic
-        async function fetchBinData(bin) {
-            try {
-                // Try standard fetch first. 
-                // Note: If the API is strictly Cloudflare Turnstile protected without a proxy, 
-                // this might return HTML. We handle that below.
-                const response = await fetch(`${API_BASE}${bin}`);
+                // Remove common separators for check, but keep original for display? 
+                // Usually people want to keep original format or just raw numbers.
+                // Let's work with raw digits for logic, but display what was pasted.
                 
-                // Check if response is HTML (Cloudflare Challenge)
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('text/html')) {
-                    const text = await response.text();
-                    // Attempt to parse the <pre> tag which contains the JSON in the HTML body
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(text, 'text/html');
-                    const pre = doc.querySelector('pre#result');
-                    if (pre && pre.innerText) {
-                        return JSON.parse(pre.innerText);
-                    }
-                    return { valid: false, message: 'Cloudflare Challenge or Invalid BIN' };
+                const digitsOnly = cc.replace(/[^0-9]/g, '');
+
+                // Unknown criteria: 
+                // 1. Not purely digits after cleaning (contains letters etc)
+                // 2. Length < 12 or > 19 (standard CC range)
+                if (!/^\d+$/.test(cc) || digitsOnly.length < 12 || digitsOnly.length > 19) {
+                    addLine(unknownEl, cc);
+                    return;
                 }
 
-                // If it's JSON directly
-                const data = await response.json();
-                return data;
-            } catch (error) {
-                console.error("Fetch error:", error);
-                return { valid: false, message: 'Network Error' };
-            }
-        }
-
-        // Luhn Algorithm Implementation
-        function luhnCheck(num) {
-            if (typeof num === 'string') {
-                num = num.replace(/\D/g, '');
-            }
-            let arr = (num + '').split('').map(function (x) { return parseInt(x); });
-            let last = arr.length - 1;
-            let sum = 0;
-            for (let i = arr.length; i > 0; i--) {
-                let c = arr[--i];
-                if (i % 2 === last % 2) {
-                    c *= 2;
-                    if (c > 9) c -= 9;
+                if (luhnCheck(digitsOnly)) {
+                    addLine(validEl, cc);
+                } else {
+                    addLine(deadEl, cc);
                 }
-                sum += c;
-            }
-            return (sum % 10) === 0;
-        }
-
-        // Single Check Handler
-        async function checkSingleBin() {
-            const bin = singleInput.value.trim();
-            if (!bin) return showToast("Enter a BIN");
-
-            setLoading(true);
-            const result = await fetchBinData(bin);
-            setLoading(false);
-
-            const isValid = result.valid !== false && result.card?.luhn === true;
-            
-            // Clear previous single results if any (optional, keeping history is usually better)
-            // resultsContainer.innerHTML = ''; 
-            
-            const card = createResultCard(bin, result, isValid);
-            resultsContainer.prepend(card);
-            updateStats(1, isValid ? 1 : 0);
-        }
-
-        // Bulk Check Handler
-        async function checkBulk() {
-            const rawInput = bulkInput.value;
-            const bins = rawInput.split(/[\n,]+/).map(b => b.trim()).filter(b => b.length > 0);
-
-            if (bins.length === 0) return showToast("No bins entered");
-
-            setLoading(true);
-            resultsContainer.innerHTML = ''; // Clear previous results
-            updateStats(0, 0);
-
-            let validCount = 0;
-            let totalCount = 0;
-
-            // Process sequentially to avoid rate limiting issues with free API
-            for (const bin of bins) {
-                const result = await fetchBinData(bin);
-                const isValid = result.valid !== false && result.card?.luhn === true;
-                
-                if (isValid) validCount++;
-                totalCount++;
-
-                const card = createResultCard(bin, result, isValid);
-                resultsContainer.appendChild(card);
-                
-                // Scroll to bottom
-                window.scrollTo(0, document.body.scrollHeight);
-            }
-
-            setLoading(false);
-            updateStats(totalCount, validCount);
-            showToast(`Done: ${validCount}/${totalCount} Valid`);
-        }
-
-        // Stats Updater
-        function updateStats(total, valid) {
-            statsDisplay.textContent = `Checked: ${total} | Valid Luhn: ${valid} | Invalid: ${total - valid}`;
-        }
-
-        // Copy Helper
-        function copyBin(bin) {
-            navigator.clipboard.writeText(bin).then(() => {
-                showToast("BIN Copied!");
-            }).catch(() => {
-                showToast("Copy failed");
             });
-        }
-
-        // Auto-format single input to uppercase
-        singleInput.addEventListener('input', (e) => {
-            e.target.value = e.target.value.toUpperCase();
         });
 
+        function luhnCheck(num) {
+            let sum = 0;
+            let alt = false;
+            for (let i = num.length - 1; i >= 0; i--) {
+                let n = parseInt(num[i], 10);
+                if (alt) {
+                    n *= 2;
+                    if (n > 9) n -= 9;
+                }
+                sum += n;
+                alt = !alt;
+            }
+            return sum % 10 === 0;
+        }
+
+        function addLine(element, text) {
+            const div = document.createElement('div');
+            div.className = 'card-line';
+            div.textContent = text;
+            element.appendChild(div);
+        }
+
+        function copyCol(id) {
+            const container = document.getElementById(id);
+            const text = container.innerText;
+            if (!text) return;
+            navigator.clipboard.writeText(text).then(() => {
+                // Visual feedback could go here
+            });
+        }
     </script>
 </body>
 </html>
