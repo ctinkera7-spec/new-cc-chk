@@ -3,94 +3,99 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZORG-Ω Card Slayer</title>
+  <title>ZORG-Ω Card Forge</title>
   <script src="https://js.stripe.com/v3/"></script>
   <style>
     :root {
-      --valid: #00ff88;
-      --invalid: #ff3366;
-      --bg: #0a0a0a;
-      --fg: #0f0;
-      --card: #1a1a1a;
-      --hover: #0f0;
-      --shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+      --gold: #d4af37;
+      --black: #0a0a0a;
+      --dark: #1a1a1a;
+      --shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+      --glow: 0 0 10px rgba(212, 175, 55, 0.5);
     }
     body {
       font-family: 'Segoe UI', 'Courier New', monospace;
-      background: var(--bg);
-      color: var(--fg);
-      margin: 20px;
-      line-height: 1.6;
+      background: var(--black);
+      color: var(--gold);
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
     }
     h1 {
-      color: var(--valid);
-      text-shadow: var(--shadow);
+      color: var(--gold);
+      text-shadow: var(--glow);
       text-align: center;
+      font-size: 2.5rem;
+      margin-bottom: 30px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .input-section {
+      background: var(--dark);
+      border: 1px solid var(--gold);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: var(--shadow);
     }
     textarea, button, select {
       width: 100%;
       padding: 12px;
       margin: 8px 0;
-      background: var(--card);
-      border: 1px solid var(--fg);
-      color: var(--fg);
+      background: var(--black);
+      border: 1px solid var(--gold);
+      color: var(--gold);
       border-radius: 4px;
       font-family: inherit;
+      font-size: 1rem;
     }
     button {
       cursor: pointer;
       transition: all 0.2s;
-      background: var(--fg);
-      color: var(--bg);
+      background: var(--gold);
+      color: var(--black);
       font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
     button:hover {
-      background: var(--hover);
-      box-shadow: var(--shadow);
+      background: #b8952f;
+      box-shadow: var(--glow);
     }
-    .container {
-      display: flex;
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 20px;
       margin-top: 20px;
     }
-    .box {
-      flex: 1;
-      border: 1px solid var(--fg);
-      border-radius: 8px;
-      padding: 15px;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: all 0.5s ease;
-      background: var(--card);
-    }
-    .box.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    .box h2 {
-      margin-top: 0;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--fg);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .success-box { border-color: var(--valid); }
-    .dead-box { border-color: var(--invalid); }
     .card {
-      background: var(--card);
-      border: 1px solid var(--fg);
+      background: var(--dark);
+      border: 1px solid var(--gold);
       border-radius: 8px;
       padding: 15px;
-      margin-bottom: 15px;
       transition: all 0.3s;
       opacity: 0;
+      transform: translateY(10px);
     }
     .card.visible {
       opacity: 1;
+      transform: translateY(0);
     }
     .card:hover {
-      box-shadow: var(--shadow);
+      box-shadow: var(--glow);
+      border-color: #b8952f;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--gold);
     }
     .card-details {
       display: grid;
@@ -108,58 +113,85 @@
       align-items: center;
       gap: 5px;
     }
-    .checkmark::before { content: "✓"; color: var(--valid); }
-    .xmark::before { content: "✗"; color: var(--invalid); }
-    .charge-btn {
+    .checkmark::before {
+      content: "✓";
+      color: var(--gold);
+    }
+    .xmark::before {
+      content: "✗";
+      color: #ff3366;
+    }
+    .stripe-element {
+      background: var(--black);
+      padding: 12px;
+      border: 1px solid var(--gold);
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .charge-controls {
       display: flex;
       gap: 10px;
       margin-top: 10px;
     }
     .dropdown {
-      background: var(--card);
-      color: var(--fg);
-      border: 1px solid var(--fg);
+      background: var(--black);
+      color: var(--gold);
+      border: 1px solid var(--gold);
       padding: 8px;
       border-radius: 4px;
       flex: 1;
-    }
-    .fade-in {
-      animation: fadeIn 0.5s ease-in-out;
     }
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
     }
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
   </style>
 </head>
 <body>
-  <h1>ZORG-Ω Card Slayer</h1>
-  <p>Enter pipe-formatted CC data (one per line): <code>NUMBER|MM|YYYY|CVV</code></p>
-  <textarea id="input" rows="10" placeholder="4111111111111111|12|2030|123"></textarea>
-  <div class="charge-btn">
-    <select id="chargeMethod" class="dropdown">
-      <option value="fake">Fake Charge (Simulated)</option>
-      <option value="stripe">Stripe (Real Charge)</option>
-    </select>
-    <button onclick="validate()">SLAY & VALIDATE</button>
-  </div>
-
   <div class="container">
-    <div id="successBox" class="box success-box">
-      <h2>✅ SUCCESS (Luhn Valid)</h2>
-      <div id="successCards"></div>
+    <h1>ZORG-Ω CARD FORGE</h1>
+
+    <div class="input-section">
+      <p>Enter pipe-formatted CC data (one per line): <code>NUMBER|MM|YYYY|CVV</code></p>
+      <textarea id="input" rows="6" placeholder="4111111111111111|12|2030|123"></textarea>
+
+      <div class="charge-controls">
+        <select id="chargeMethod" class="dropdown">
+          <option value="fake">Fake Charge (Simulated)</option>
+          <option value="stripe">Stripe (Real Charge)</option>
+        </select>
+        <button onclick="validate()">FORGE & VALIDATE</button>
+      </div>
     </div>
 
-    <div id="deadBox" class="box dead-box">
-      <h2>❌ DEAD (Luhn Invalid)</h2>
-      <div id="deadCards"></div>
+    <div id="stripeElement" class="stripe-element" style="display: none;">
+      <div id="card-element">
+        <!-- Stripe Elements will be inserted here -->
+      </div>
+    </div>
+
+    <div class="card-grid">
+      <div id="successBox">
+        <h2>✅ LUHN VALID (FORGED)</h2>
+        <div id="successCards" class="card-grid"></div>
+      </div>
+
+      <div id="deadBox">
+        <h2>❌ LUHN INVALID (BROKEN)</h2>
+        <div id="deadCards" class="card-grid"></div>
+      </div>
     </div>
   </div>
 
   <script>
-    // Stripe.js initialization
+    // Initialize Stripe
     const stripe = Stripe('pk_live_51NMHTlLvIw0k1EPu80ivQ0HYQ9NUotEncPEpUYYytP8YkUPB4vNGYICv1rB5Emf6nD1UzKXd0wKzdXnumGJqYPDt00Huwrpsfq');
-    let paymentMethods = [];
+    const elements = stripe.elements();
+    const cardElement = elements.create('card');
+    cardElement.mount('#card-element');
 
     function validate() {
       const input = document.getElementById('input').value.trim();
@@ -168,10 +200,6 @@
       const deadCards = document.getElementById('deadCards');
       successCards.innerHTML = '';
       deadCards.innerHTML = '';
-
-      // Reset boxes
-      document.getElementById('successBox').classList.remove('visible');
-      document.getElementById('deadBox').classList.remove('visible');
 
       lines.forEach((line, index) => {
         setTimeout(() => {
@@ -183,13 +211,16 @@
             const card = document.createElement('div');
             card.className = 'card fade-in';
             card.innerHTML = `
+              <div class="card-header">
+                <strong>CARD ${index + 1}</strong>
+                <span class="status"><span class="checkmark"></span> Valid</span>
+              </div>
               <div class="card-details">
                 <div><strong>Number:</strong> ${number.replace(/\d{4}(?=\d)/g, '$& ')}</div>
                 <div><strong>Expiry:</strong> ${mm}/${yyyy}</div>
                 <div><strong>CVV:</strong> ${cvv}</div>
               </div>
               <div class="card-status">
-                <div class="status"><span class="checkmark"></span> Luhn Valid</div>
                 <div class="status ${expiryValid ? 'valid' : 'invalid'}">
                   ${expiryValid ? '<span class="checkmark"></span> Expiry Valid' : '<span class="xmark"></span> Expired'}
                 </div>
@@ -199,19 +230,21 @@
               <button onclick="chargeCard('${number}', '${mm}', '${yyyy}', '${cvv}')">CHARGE</button>
             `;
             successCards.appendChild(card);
-            document.getElementById('successBox').classList.add('visible');
             card.classList.add('visible');
           } else {
             const card = document.createElement('div');
             card.className = 'card fade-in';
             card.innerHTML = `
+              <div class="card-header">
+                <strong>CARD ${index + 1}</strong>
+                <span class="status"><span class="xmark"></span> Invalid</span>
+              </div>
               <div class="card-details">
                 <div><strong>Number:</strong> ${number.replace(/\d{4}(?=\d)/g, '$& ')}</div>
                 <div><strong>Expiry:</strong> ${mm}/${yyyy}</div>
                 <div><strong>CVV:</strong> ${cvv}</div>
               </div>
               <div class="card-status">
-                <div class="status"><span class="xmark"></span> Luhn Invalid</div>
                 <div class="status ${expiryValid ? 'valid' : 'invalid'}">
                   ${expiryValid ? '<span class="checkmark"></span> Expiry Valid' : '<span class="xmark"></span> Expired'}
                 </div>
@@ -219,7 +252,6 @@
               <div>Reason: Luhn check failed</div>
             `;
             deadCards.appendChild(card);
-            document.getElementById('deadBox').classList.add('visible');
             card.classList.add('visible');
           }
         }, 100 * index);
@@ -232,7 +264,6 @@
       const chargeReason = document.getElementById(`charge-reason-${number}`);
 
       if (chargeMethod === 'fake') {
-        // Simulate random charge results
         const isCharged = Math.random() > 0.5;
         if (isCharged) {
           chargeStatus.innerHTML = '<span class="checkmark"></span> Charged';
@@ -242,28 +273,23 @@
           chargeReason.textContent = 'Fake charge declined';
         }
       } else if (chargeMethod === 'stripe') {
-        // Real Stripe charge
         chargeStatus.innerHTML = '<span class="xmark"></span> Processing...';
         chargeReason.textContent = 'Contacting Stripe...';
 
         try {
-          const paymentMethod = await stripe.createPaymentMethod({
+          // Use Stripe Elements for real charges
+          const { paymentMethod, error } = await stripe.createPaymentMethod({
             type: 'card',
-            card: {
-              number: number,
-              exp_month: mm,
-              exp_year: yyyy,
-              cvc: cvv,
-            },
+            card: cardElement,
           });
 
-          if (paymentMethod.error) {
+          if (error) {
             chargeStatus.innerHTML = '<span class="xmark"></span> Failed';
-            chargeReason.textContent = paymentMethod.error.message;
+            chargeReason.textContent = error.message;
           } else {
-            paymentMethods.push(paymentMethod.paymentMethod.id);
             chargeStatus.innerHTML = '<span class="checkmark"></span> Charged';
             chargeReason.textContent = 'Stripe charge successful';
+            console.log('PaymentMethod:', paymentMethod);
           }
         } catch (error) {
           chargeStatus.innerHTML = '<span class="xmark"></span> Failed';
