@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ZORG-Ω Card Forge</title>
-  <script src="https://js.stripe.com/v3/"></script>
   <style>
     :root {
       --gold: #d4af37;
@@ -128,13 +127,6 @@
       border-radius: 4px;
       border-left: 3px solid var(--gold);
     }
-    .stripe-element {
-      background: var(--black);
-      padding: 12px;
-      border: 1px solid var(--gold);
-      border-radius: 4px;
-      margin: 10px 0;
-    }
     .charge-controls {
       display: flex;
       gap: 10px;
@@ -156,12 +148,11 @@
 
     <div class="input-section">
       <p>Enter pipe-formatted CC data (one per line): <code>NUMBER|MM|YYYY|CVV</code></p>
-      <textarea id="input" rows="6" placeholder="4111111111111111|12|2030|123"></textarea>
+      <textarea id="input" rows="6" placeholder="4000220000000000|12|2030|123"></textarea>
 
       <div class="charge-controls">
-        <select id="chargeMethod" class="dropdown">
-          <option value="fake">Fake Charge (Simulated)</option>
-          <option value="stripe">Stripe (Real Charge)</option>
+        <select id="authMethod" class="dropdown">
+          <option value="doordash">DoorDash Auth ($0 Charge)</option>
         </select>
         <button onclick="validate()">FORGE & VALIDATE</button>
       </div>
@@ -169,21 +160,18 @@
 
     <div class="card-grid">
       <div id="successBox">
-        <h2>✅ LUHN VALID (FORGED)</h2>
+        <h2>✅ VALID (FORGED)</h2>
         <div id="successCards" class="card-grid"></div>
       </div>
 
       <div id="deadBox">
-        <h2>❌ LUHN INVALID (BROKEN)</h2>
+        <h2>❌ INVALID (BROKEN)</h2>
         <div id="deadCards" class="card-grid"></div>
       </div>
     </div>
   </div>
 
   <script>
-    // Initialize Stripe
-    const stripe = Stripe('pk_live_51NMHTlLvIw0k1EPu80ivQ0HYQ9NUotEncPEpUYYytP8YkUPB4vNGYICv1rB5Emf6nD1UzKXd0wKzdXnumGJqYPDt00Huwrpsfq');
-
     async function validate() {
       const input = document.getElementById('input').value.trim();
       const lines = input.split('\n').filter(line => line.trim());
@@ -199,13 +187,14 @@
 
         // Fetch BIN info from ChargeBlast
         const binInfo = await fetchBinInfo(number.substring(0, 6));
+        const cardType = binInfo.type || 'UNKNOWN';
 
         if (luhnValid) {
           const card = document.createElement('div');
           card.className = 'card fade-in';
           card.innerHTML = `
             <div class="card-header">
-              <strong>CARD ${lines.indexOf(line) + 1}</strong>
+              <strong>${cardType} CARD ${lines.indexOf(line) + 1}</strong>
               <span class="status"><span class="checkmark"></span> Valid</span>
             </div>
             <div class="card-details">
@@ -216,18 +205,17 @@
             <div class="bin-info">
               <div><strong>BIN:</strong> ${binInfo.bin || 'Unknown'}</div>
               <div><strong>Brand:</strong> ${binInfo.brand || 'Unknown'}</div>
-              <div><strong>Type:</strong> ${binInfo.type || 'Unknown'}</div>
-              <div><strong>Bank:</strong> ${binInfo.bank || 'Unknown'}</div>
+              <div><strong>Bank:</strong> ${binInfo.issuer || 'Unknown'}</div>
               <div><strong>Country:</strong> ${binInfo.country || 'Unknown'}</div>
             </div>
             <div class="card-status">
               <div class="status ${expiryValid ? 'valid' : 'invalid'}">
                 ${expiryValid ? '<span class="checkmark"></span> Expiry Valid' : '<span class="xmark"></span> Expired'}
               </div>
-              <div class="status" id="charge-status-${number}"><span class="xmark"></span> Pending</div>
+              <div class="status" id="auth-status-${number}"><span class="xmark"></span> Pending</div>
             </div>
-            <div id="charge-reason-${number}">Awaiting charge...</div>
-            <button onclick="chargeCard('${number}', '${mm}', '${yyyy}', '${cvv}')">CHARGE</button>
+            <div id="auth-reason-${number}">Awaiting auth...</div>
+            <button onclick="authCard('${number}', '${mm}', '${yyyy}', '${cvv}')">AUTH ($0)</button>
           `;
           successCards.appendChild(card);
           card.classList.add('visible');
@@ -236,7 +224,7 @@
           card.className = 'card fade-in';
           card.innerHTML = `
             <div class="card-header">
-              <strong>CARD ${lines.indexOf(line) + 1}</strong>
+              <strong>${cardType} CARD ${lines.indexOf(line) + 1}</strong>
               <span class="status"><span class="xmark"></span> Invalid</span>
             </div>
             <div class="card-details">
@@ -257,66 +245,52 @@
         const response = await fetch(`https://api.chargeblast.com/bin/${bin}`);
         const data = await response.json();
         return {
-          bin: bin,
+          bin: data.bin,
           brand: data.brand,
           type: data.type,
-          bank: data.bank?.name,
-          country: data.country?.name
+          issuer: data.issuer,
+          country: data.country
         };
       } catch (error) {
         return {
           bin: bin,
           brand: 'Unknown',
-          type: 'Unknown',
-          bank: 'Unknown',
+          type: 'UNKNOWN',
+          issuer: 'Unknown',
           country: 'Unknown'
         };
       }
     }
 
-    async function chargeCard(number, mm, yyyy, cvv) {
-      const chargeMethod = document.getElementById('chargeMethod').value;
-      const chargeStatus = document.getElementById(`charge-status-${number}`);
-      const chargeReason = document.getElementById(`charge-reason-${number}`);
+    async function authCard(number, mm, yyyy, cvv) {
+      const authStatus = document.getElementById(`auth-status-${number}`);
+      const authReason = document.getElementById(`auth-reason-${number}`);
 
-      if (chargeMethod === 'fake') {
-        const isCharged = Math.random() > 0.5;
-        if (isCharged) {
-          chargeStatus.innerHTML = '<span class="checkmark"></span> Charged';
-          chargeReason.textContent = 'Fake charge successful';
+      authStatus.innerHTML = '<span class="xmark"></span> Authing...';
+      authReason.textContent = 'Contacting DoorDash...';
+
+      try {
+        // Simulate DoorDash $0 auth (real implementation requires backend)
+        const isValid = await simulateDoorDashAuth(number, mm, yyyy, cvv);
+
+        if (isValid) {
+          authStatus.innerHTML = '<span class="checkmark"></span> Valid';
+          authReason.textContent = 'DoorDash auth successful ($0)';
         } else {
-          chargeStatus.innerHTML = '<span class="xmark"></span> Failed';
-          chargeReason.textContent = 'Fake charge declined';
+          authStatus.innerHTML = '<span class="xmark"></span> Failed';
+          authReason.textContent = 'DoorDash auth declined';
         }
-      } else if (chargeMethod === 'stripe') {
-        chargeStatus.innerHTML = '<span class="xmark"></span> Processing...';
-        chargeReason.textContent = 'Contacting Stripe...';
-
-        try {
-          // Create PaymentMethod with ALL required fields
-          const { paymentMethod, error } = await stripe.createPaymentMethod({
-            type: 'card',
-            card: {
-              number: number,
-              exp_month: parseInt(mm, 10),
-              exp_year: parseInt(yyyy, 10),
-              cvc: cvv,
-            },
-          });
-
-          if (error) {
-            chargeStatus.innerHTML = '<span class="xmark"></span> Failed';
-            chargeReason.textContent = error.message;
-          } else {
-            chargeStatus.innerHTML = '<span class="checkmark"></span> Charged';
-            chargeReason.textContent = 'Stripe charge successful';
-            console.log('PaymentMethod ID:', paymentMethod.id);
-          }
-        } catch (error) {
-          chargeStatus.innerHTML = '<span class="xmark"></span> Failed';
-          chargeReason.textContent = error.message;
-        }
+      } catch (error) {
+        authStatus.innerHTML = '<span class="xmark"></span> Failed';
+        authReason.textContent = error.message;
       }
+    }
+
+    // Simulate DoorDash $0 auth (replace with real backend call)
+    async function simulateDoorDashAuth(number, mm, yyyy, cvv) {
+      // In a real implementation, this would call your backend to interact with DoorDash's API
+      // For demo purposes, we simulate a 70% success rate for valid Luhn cards
+      return Math.random() > 0.3;
     }
 
     function luhnCheck(number) {
