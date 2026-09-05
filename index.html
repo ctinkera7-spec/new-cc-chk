@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ZORG-Ω Card Forge</title>
   <script src="https://js.stripe.com/v3/"></script>
-  <style> 
+  <style>
     :root {
       --gold: #d4af37;
       --black: #0a0a0a;
@@ -68,7 +68,7 @@
     }
     .card-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
       gap: 20px;
       margin-top: 20px;
     }
@@ -120,6 +120,13 @@
     .xmark::before {
       content: "✗";
       color: #ff3366;
+    }
+    .bin-info {
+      margin-top: 10px;
+      padding: 10px;
+      background: rgba(212, 175, 55, 0.1);
+      border-radius: 4px;
+      border-left: 3px solid var(--gold);
     }
     .stripe-element {
       background: var(--black);
@@ -193,7 +200,7 @@
     const cardElement = elements.create('card');
     cardElement.mount('#card-element');
 
-    function validate() {
+    async function validate() {
       const input = document.getElementById('input').value.trim();
       const lines = input.split('\n').filter(line => line.trim());
       const successCards = document.getElementById('successCards');
@@ -201,61 +208,94 @@
       successCards.innerHTML = '';
       deadCards.innerHTML = '';
 
-      lines.forEach((line, index) => {
-        setTimeout(() => {
-          const [number, mm, yyyy, cvv] = line.split('|').map(s => s.trim());
-          const luhnValid = luhnCheck(number);
-          const expiryValid = checkExpiry(mm, yyyy);
+      for (const line of lines) {
+        const [number, mm, yyyy, cvv] = line.split('|').map(s => s.trim());
+        const luhnValid = luhnCheck(number);
+        const expiryValid = checkExpiry(mm, yyyy);
 
-          if (luhnValid) {
-            const card = document.createElement('div');
-            card.className = 'card fade-in';
-            card.innerHTML = `
-              <div class="card-header">
-                <strong>CARD ${index + 1}</strong>
-                <span class="status"><span class="checkmark"></span> Valid</span>
+        // Fetch BIN info
+        const binInfo = await fetchBinInfo(number.substring(0, 6));
+
+        if (luhnValid) {
+          const card = document.createElement('div');
+          card.className = 'card fade-in';
+          card.innerHTML = `
+            <div class="card-header">
+              <strong>CARD ${lines.indexOf(line) + 1}</strong>
+              <span class="status"><span class="checkmark"></span> Valid</span>
+            </div>
+            <div class="card-details">
+              <div><strong>Number:</strong> ${number.replace(/\d{4}(?=\d)/g, '$& ')}</div>
+              <div><strong>Expiry:</strong> ${mm}/${yyyy}</div>
+              <div><strong>CVV:</strong> ${cvv}</div>
+            </div>
+            <div class="bin-info">
+              <div><strong>BIN:</strong> ${binInfo.bin}</div>
+              <div><strong>Brand:</strong> ${binInfo.brand || 'Unknown'}</div>
+              <div><strong>Type:</strong> ${binInfo.type || 'Unknown'}</div>
+              <div><strong>Level:</strong> ${binInfo.level || 'Unknown'}</div>
+              <div><strong>Bank:</strong> ${binInfo.bank || 'Unknown'}</div>
+              <div><strong>Country:</strong> ${binInfo.country || 'Unknown'}</div>
+            </div>
+            <div class="card-status">
+              <div class="status ${expiryValid ? 'valid' : 'invalid'}">
+                ${expiryValid ? '<span class="checkmark"></span> Expiry Valid' : '<span class="xmark"></span> Expired'}
               </div>
-              <div class="card-details">
-                <div><strong>Number:</strong> ${number.replace(/\d{4}(?=\d)/g, '$& ')}</div>
-                <div><strong>Expiry:</strong> ${mm}/${yyyy}</div>
-                <div><strong>CVV:</strong> ${cvv}</div>
+              <div class="status" id="charge-status-${number}"><span class="xmark"></span> Pending</div>
+            </div>
+            <div id="charge-reason-${number}">Awaiting charge...</div>
+            <button onclick="chargeCard('${number}', '${mm}', '${yyyy}', '${cvv}')">CHARGE</button>
+          `;
+          successCards.appendChild(card);
+          card.classList.add('visible');
+        } else {
+          const card = document.createElement('div');
+          card.className = 'card fade-in';
+          card.innerHTML = `
+            <div class="card-header">
+              <strong>CARD ${lines.indexOf(line) + 1}</strong>
+              <span class="status"><span class="xmark"></span> Invalid</span>
+            </div>
+            <div class="card-details">
+              <div><strong>Number:</strong> ${number.replace(/\d{4}(?=\d)/g, '$& ')}</div>
+              <div><strong>Expiry:</strong> ${mm}/${yyyy}</div>
+              <div><strong>CVV:</strong> ${cvv}</div>
+            </div>
+            <div class="card-status">
+              <div class="status ${expiryValid ? 'valid' : 'invalid'}">
+                ${expiryValid ? '<span class="checkmark"></span> Expiry Valid' : '<span class="xmark"></span> Expired'}
               </div>
-              <div class="card-status">
-                <div class="status ${expiryValid ? 'valid' : 'invalid'}">
-                  ${expiryValid ? '<span class="checkmark"></span> Expiry Valid' : '<span class="xmark"></span> Expired'}
-                </div>
-                <div class="status" id="charge-status-${number}"><span class="xmark"></span> Pending</div>
-              </div>
-              <div id="charge-reason-${number}">Awaiting charge...</div>
-              <button onclick="chargeCard('${number}', '${mm}', '${yyyy}', '${cvv}')">CHARGE</button>
-            `;
-            successCards.appendChild(card);
-            card.classList.add('visible');
-          } else {
-            const card = document.createElement('div');
-            card.className = 'card fade-in';
-            card.innerHTML = `
-              <div class="card-header">
-                <strong>CARD ${index + 1}</strong>
-                <span class="status"><span class="xmark"></span> Invalid</span>
-              </div>
-              <div class="card-details">
-                <div><strong>Number:</strong> ${number.replace(/\d{4}(?=\d)/g, '$& ')}</div>
-                <div><strong>Expiry:</strong> ${mm}/${yyyy}</div>
-                <div><strong>CVV:</strong> ${cvv}</div>
-              </div>
-              <div class="card-status">
-                <div class="status ${expiryValid ? 'valid' : 'invalid'}">
-                  ${expiryValid ? '<span class="checkmark"></span> Expiry Valid' : '<span class="xmark"></span> Expired'}
-                </div>
-              </div>
-              <div>Reason: Luhn check failed</div>
-            `;
-            deadCards.appendChild(card);
-            card.classList.add('visible');
-          }
-        }, 100 * index);
-      });
+            </div>
+            <div>Reason: Luhn check failed</div>
+          `;
+          deadCards.appendChild(card);
+          card.classList.add('visible');
+        }
+      }
+    }
+
+    async function fetchBinInfo(bin) {
+      try {
+        const response = await fetch(`https://bin-checker.net/api/${bin}`);
+        const data = await response.json();
+        return {
+          bin: bin,
+          brand: data.brand,
+          type: data.type,
+          level: data.level,
+          bank: data.bank?.name,
+          country: data.country?.name
+        };
+      } catch (error) {
+        return {
+          bin: bin,
+          brand: 'Unknown',
+          type: 'Unknown',
+          level: 'Unknown',
+          bank: 'Unknown',
+          country: 'Unknown'
+        };
+      }
     }
 
     async function chargeCard(number, mm, yyyy, cvv) {
@@ -277,7 +317,6 @@
         chargeReason.textContent = 'Contacting Stripe...';
 
         try {
-          // Use Stripe Elements for real charges
           const { paymentMethod, error } = await stripe.createPaymentMethod({
             type: 'card',
             card: cardElement,
