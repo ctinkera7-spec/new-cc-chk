@@ -172,6 +172,9 @@
   </div>
 
   <script>
+    // Cloudflare Worker BIN API
+    const API_BASE = "https://bing.ctinker-a7-b62.workers.dev";
+
     async function validate() {
       const input = document.getElementById('input').value.trim();
       const lines = input.split('\n').filter(line => line.trim());
@@ -185,7 +188,7 @@
         const luhnValid = luhnCheck(number);
         const expiryValid = checkExpiry(mm, yyyy);
 
-        // Fetch BIN info from ChargeBlast
+        // Fetch BIN info from Cloudflare Worker
         const binInfo = await fetchBinInfo(number.substring(0, 6));
         const cardType = binInfo.type || 'UNKNOWN';
 
@@ -242,7 +245,10 @@
 
     async function fetchBinInfo(bin) {
       try {
-        const response = await fetch(`https://api.chargeblast.com/bin/${bin}`);
+        const response = await fetch(`${API_BASE}/bin/${bin}`);
+        if (!response.ok) {
+          throw new Error('BIN not found');
+        }
         const data = await response.json();
         return {
           bin: data.bin,
@@ -270,7 +276,7 @@
       authReason.textContent = 'Contacting DoorDash...';
 
       try {
-        // Simulate DoorDash $0 auth (real implementation requires backend)
+        // Simulate DoorDash $0 auth (replace with real backend call)
         const isValid = await simulateDoorDashAuth(number, mm, yyyy, cvv);
 
         if (isValid) {
