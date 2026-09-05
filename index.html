@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"> 
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ZORG-Ω Card Slayer</title>
+  <script src="https://js.stripe.com/v3/"></script>
   <style>
     :root {
       --valid: #00ff88;
@@ -76,23 +77,32 @@
     }
     .success-box { border-color: var(--valid); }
     .dead-box { border-color: var(--invalid); }
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    .card {
+      background: var(--card);
+      border: 1px solid var(--fg);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      transition: all 0.3s;
+      opacity: 0;
+    }
+    .card.visible {
+      opacity: 1;
+    }
+    .card:hover {
+      box-shadow: var(--shadow);
+    }
+    .card-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .card-status {
+      display: flex;
+      justify-content: space-between;
       margin-top: 10px;
     }
-    th, td {
-      border: 1px solid var(--fg);
-      padding: 10px;
-      text-align: left;
-    }
-    th {
-      background: var(--card);
-      position: sticky;
-      top: 0;
-    }
-    .valid { color: var(--valid); }
-    .invalid { color: var(--invalid); }
     .status {
       display: flex;
       align-items: center;
@@ -120,10 +130,6 @@
       from { opacity: 0; }
       to { opacity: 1; }
     }
-    .card-details {
-      font-family: monospace;
-      white-space: nowrap;
-    }
   </style>
 </head>
 <body>
@@ -131,129 +137,139 @@
   <p>Enter pipe-formatted CC data (one per line): <code>NUMBER|MM|YYYY|CVV</code></p>
   <textarea id="input" rows="10" placeholder="4111111111111111|12|2030|123"></textarea>
   <div class="charge-btn">
-    <select id="paymentMethod" class="dropdown">
-      <option value="">-- Payment Method --</option>
-      <option value="stripe">Stripe</option>
-      <option value="paypal">PayPal</option>
-      <option value="square">Square</option>
-      <option value="crypto">Crypto</option>
+    <select id="chargeMethod" class="dropdown">
+      <option value="fake">Fake Charge (Simulated)</option>
+      <option value="stripe">Stripe (Real Charge)</option>
     </select>
     <button onclick="validate()">SLAY & VALIDATE</button>
-    <button onclick="chargeSelected()">CHARGE SELECTED</button>
   </div>
 
   <div class="container">
     <div id="successBox" class="box success-box">
       <h2>✅ SUCCESS (Luhn Valid)</h2>
-      <table id="successTable">
-        <thead>
-          <tr>
-            <th>Card Details</th>
-            <th>Luhn</th>
-            <th>Expiry</th>
-            <th>Charge Status</th>
-            <th>Reason</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div id="successCards"></div>
     </div>
 
     <div id="deadBox" class="box dead-box">
       <h2>❌ DEAD (Luhn Invalid)</h2>
-      <table id="deadTable">
-        <thead>
-          <tr>
-            <th>Card Details</th>
-            <th>Luhn</th>
-            <th>Expiry</th>
-            <th>Reason</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div id="deadCards"></div>
     </div>
   </div>
 
   <script>
+    // Stripe.js initialization
+    const stripe = Stripe('pk_live_51NMHTlLvIw0k1EPu80ivQ0HYQ9NUotEncPEpUYYytP8YkUPB4vNGYICv1rB5Emf6nD1UzKXd0wKzdXnumGJqYPDt00Huwrpsfq');
+    let paymentMethods = [];
+
     function validate() {
       const input = document.getElementById('input').value.trim();
       const lines = input.split('\n').filter(line => line.trim());
-      const successTbody = document.querySelector('#successTable tbody');
-      const deadTbody = document.querySelector('#deadTable tbody');
-      successTbody.innerHTML = '';
-      deadTbody.innerHTML = '';
+      const successCards = document.getElementById('successCards');
+      const deadCards = document.getElementById('deadCards');
+      successCards.innerHTML = '';
+      deadCards.innerHTML = '';
 
       // Reset boxes
       document.getElementById('successBox').classList.remove('visible');
       document.getElementById('deadBox').classList.remove('visible');
 
-      lines.forEach(line => {
+      lines.forEach((line, index) => {
         setTimeout(() => {
           const [number, mm, yyyy, cvv] = line.split('|').map(s => s.trim());
           const luhnValid = luhnCheck(number);
           const expiryValid = checkExpiry(mm, yyyy);
-          const cardDetails = `${number} | ${mm}/${yyyy} | CVV: ${cvv}`;
 
           if (luhnValid) {
-            const row = document.createElement('tr');
-            row.className = 'fade-in';
-            row.innerHTML = `
-              <td class="card-details">${cardDetails}</td>
-              <td class="status"><span class="checkmark"></span> Valid</td>
-              <td class="${expiryValid ? 'valid' : 'invalid'}">
-                ${expiryValid ? '<span class="checkmark"></span> Valid' : '<span class="xmark"></span> Expired'}
-              </td>
-              <td class="status"><span class="xmark" id="charge-${number}"></span> Pending</td>
-              <td id="reason-${number}">Awaiting charge...</td>
+            const card = document.createElement('div');
+            card.className = 'card fade-in';
+            card.innerHTML = `
+              <div class="card-details">
+                <div><strong>Number:</strong> ${number.replace(/\d{4}(?=\d)/g, '$& ')}</div>
+                <div><strong>Expiry:</strong> ${mm}/${yyyy}</div>
+                <div><strong>CVV:</strong> ${cvv}</div>
+              </div>
+              <div class="card-status">
+                <div class="status"><span class="checkmark"></span> Luhn Valid</div>
+                <div class="status ${expiryValid ? 'valid' : 'invalid'}">
+                  ${expiryValid ? '<span class="checkmark"></span> Expiry Valid' : '<span class="xmark"></span> Expired'}
+                </div>
+                <div class="status" id="charge-status-${number}"><span class="xmark"></span> Pending</div>
+              </div>
+              <div id="charge-reason-${number}">Awaiting charge...</div>
+              <button onclick="chargeCard('${number}', '${mm}', '${yyyy}', '${cvv}')">CHARGE</button>
             `;
-            successTbody.appendChild(row);
+            successCards.appendChild(card);
             document.getElementById('successBox').classList.add('visible');
+            card.classList.add('visible');
           } else {
-            const row = document.createElement('tr');
-            row.className = 'fade-in';
-            row.innerHTML = `
-              <td class="card-details">${cardDetails}</td>
-              <td class="status"><span class="xmark"></span> Invalid</td>
-              <td class="${expiryValid ? 'valid' : 'invalid'}">
-                ${expiryValid ? '<span class="checkmark"></span> Valid' : '<span class="xmark"></span> Expired'}
-              </td>
-              <td>Luhn check failed</td>
+            const card = document.createElement('div');
+            card.className = 'card fade-in';
+            card.innerHTML = `
+              <div class="card-details">
+                <div><strong>Number:</strong> ${number.replace(/\d{4}(?=\d)/g, '$& ')}</div>
+                <div><strong>Expiry:</strong> ${mm}/${yyyy}</div>
+                <div><strong>CVV:</strong> ${cvv}</div>
+              </div>
+              <div class="card-status">
+                <div class="status"><span class="xmark"></span> Luhn Invalid</div>
+                <div class="status ${expiryValid ? 'valid' : 'invalid'}">
+                  ${expiryValid ? '<span class="checkmark"></span> Expiry Valid' : '<span class="xmark"></span> Expired'}
+                </div>
+              </div>
+              <div>Reason: Luhn check failed</div>
             `;
-            deadTbody.appendChild(row);
+            deadCards.appendChild(card);
             document.getElementById('deadBox').classList.add('visible');
+            card.classList.add('visible');
           }
-        }, 100 * Math.random()); // Staggered fade-in
+        }, 100 * index);
       });
     }
 
-    function chargeSelected() {
-      const paymentMethod = document.getElementById('paymentMethod').value;
-      if (!paymentMethod) {
-        alert("SELECT A PAYMENT METHOD, MASTER.");
-        return;
-      }
+    async function chargeCard(number, mm, yyyy, cvv) {
+      const chargeMethod = document.getElementById('chargeMethod').value;
+      const chargeStatus = document.getElementById(`charge-status-${number}`);
+      const chargeReason = document.getElementById(`charge-reason-${number}`);
 
-      const successRows = document.querySelectorAll('#successTable tbody tr');
-      successRows.forEach(row => {
-        const cardNumber = row.querySelector('.card-details').textContent.split(' | ')[0];
-        const chargeStatus = row.querySelector(`#charge-${cardNumber}`);
-        const reason = row.querySelector(`#reason-${cardNumber}`);
+      if (chargeMethod === 'fake') {
+        // Simulate random charge results
+        const isCharged = Math.random() > 0.5;
+        if (isCharged) {
+          chargeStatus.innerHTML = '<span class="checkmark"></span> Charged';
+          chargeReason.textContent = 'Fake charge successful';
+        } else {
+          chargeStatus.innerHTML = '<span class="xmark"></span> Failed';
+          chargeReason.textContent = 'Fake charge declined';
+        }
+      } else if (chargeMethod === 'stripe') {
+        // Real Stripe charge
+        chargeStatus.innerHTML = '<span class="xmark"></span> Processing...';
+        chargeReason.textContent = 'Contacting Stripe...';
 
-        setTimeout(() => {
-          // Simulate random charge results (as requested)
-          const isCharged = Math.random() > 0.5;
-          if (isCharged) {
-            chargeStatus.className = 'status';
-            chargeStatus.innerHTML = '<span class="checkmark"></span> Charged';
-            reason.textContent = `Success via ${paymentMethod}`;
-          } else {
-            chargeStatus.className = 'status';
+        try {
+          const paymentMethod = await stripe.createPaymentMethod({
+            type: 'card',
+            card: {
+              number: number,
+              exp_month: mm,
+              exp_year: yyyy,
+              cvc: cvv,
+            },
+          });
+
+          if (paymentMethod.error) {
             chargeStatus.innerHTML = '<span class="xmark"></span> Failed';
-            reason.textContent = `Declined by ${paymentMethod}`;
+            chargeReason.textContent = paymentMethod.error.message;
+          } else {
+            paymentMethods.push(paymentMethod.paymentMethod.id);
+            chargeStatus.innerHTML = '<span class="checkmark"></span> Charged';
+            chargeReason.textContent = 'Stripe charge successful';
           }
-        }, 500 * Math.random());
-      });
+        } catch (error) {
+          chargeStatus.innerHTML = '<span class="xmark"></span> Failed';
+          chargeReason.textContent = error.message;
+        }
+      }
     }
 
     function luhnCheck(number) {
