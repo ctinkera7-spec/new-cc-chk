@@ -1,54 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<style>
-    :root { 
-        --white: #ffffff; --border: rgba(255, 255, 255, 0.2);
-        --bg: #000000; --card-bg: #0a0a0a; --transition: all 0.2s ease;
-    } 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZORG-Ω FORGE</title>
+    <style>
+        :root { 
+            --white: #ffffff; 
+            --border: rgba(255, 255, 255, 0.2); 
+            --bg: #000000; 
+            --card-bg: #0a0a0a; 
+            --transition: all 0.2s ease; 
+        }
 
-    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--white); margin: 0; padding: 40px 15px; } 
-    .container { max-width: 900px; margin: 0 auto; } 
-    h1 { font-family: 'Courier New', monospace; text-align: center; letter-spacing: 10px; margin-bottom: 30px; font-weight: 200; } 
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg); 
+            color: var(--white); 
+            margin: 0; 
+            padding: 40px 15px; 
+        }
 
-    .gen-section, .input-section { border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; background: #080808; }
-    .gen-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 10px; margin-top: 10px; }
-    
-    textarea, select, button, input { 
-        width: 100%; padding: 12px; background: transparent; border: 1px solid var(--border); 
-        color: var(--white); border-radius: 6px; font-family: inherit; font-size: 0.85rem; box-sizing: border-box;
-    } 
+        .container { max-width: 900px; margin: 0 auto; }
 
-    button { background: var(--white); color: #000; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-    .btn-control { width: auto; padding: 8px 15px; font-size: 0.7rem; margin-right: 5px; }
-    .btn-stop { border-color: #ff3366; color: #ff3366; background: transparent; }
-    .btn-clear { border-color: #666; color: #666; background: transparent; margin-top: 10px; }
+        h1 { 
+            font-family: 'Courier New', monospace; 
+            text-align: center; 
+            letter-spacing: 10px; 
+            margin-bottom: 30px; 
+            font-weight: 200; 
+        }
 
-    /* Accordion */
-    .dropdown-section { margin-top: 25px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-    .dropdown-header { padding: 15px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #0a0a0a; border-bottom: 1px solid var(--border); }
-    .dropdown-content { padding: 20px; display: none; }
-    .dropdown-section.active .dropdown-content { display: block; }
+        .gen-section, .input-section { 
+            border: 1px solid var(--border); 
+            border-radius: 12px; 
+            padding: 20px; 
+            margin-bottom: 20px; 
+            background: #080808; 
+        }
 
-    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; } 
-    .card { background: #000; border: 1px solid var(--border); border-radius: 10px; padding: 20px; position: relative; } 
-    
-    .remove-card { position: absolute; top: 10px; right: 10px; cursor: pointer; opacity: 0.3; font-size: 0.8rem; }
-    .remove-card:hover { opacity: 1; color: #ff3366; }
+        .gen-grid { 
+            display: grid; 
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr; 
+            gap: 10px; 
+        }
 
-    .card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
-    .brand-logo { width: 24px; height: 24px; border-radius: 4px; filter: grayscale(1) invert(1); }
-    .bank-name { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: #aaa; flex: 1; }
-    
-    .cc-num { font-family: 'Fira Code', monospace; font-size: 1.1rem; margin: 10px 0; color: #fff; }
-    .billboard { background: #111; height: 20px; overflow: hidden; margin-top: 15px; border: 1px solid rgba(255,255,255,0.05); }
-    .billboard-track { display: flex; white-space: nowrap; animation: slide 25s linear infinite; font-family: monospace; font-size: 0.6rem; color: #888; align-items: center; height: 100%; }
-    @keyframes slide { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+        input, textarea, select, button { 
+            width: 100%; 
+            padding: 12px; 
+            margin-top: 10px; 
+            background: transparent; 
+            border: 1px solid var(--border); 
+            color: var(--white); 
+            border-radius: 6px; 
+            font-family: inherit; 
+            font-size: 0.9rem; 
+            box-sizing: border-box; 
+        }
 
-    .badge { border: 1px solid var(--border); padding: 1px 6px; font-size: 0.7rem; border-radius: 4px; }
-    #status-bar { font-size: 0.7rem; color: #888; margin-bottom: 10px; font-family: monospace; }
-</style>
+        button { 
+            background: var(--white); 
+            color: #000; 
+            font-weight: bold; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+        }
+
+        .btn-control { width: auto; padding: 8px 15px; font-size: 0.7rem; margin-right: 5px; }
+        .btn-stop { border-color: #ff3366; color: #ff3366; background: transparent; }
+        .btn-clear { border-color: #666; color: #666; background: transparent; margin-top: 10px; }
+
+        /* Accordion */
+        .dropdown-section { margin-top: 25px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        .dropdown-header { 
+            padding: 15px 20px; 
+            cursor: pointer; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: #0a0a0a; 
+            border-bottom: 1px solid var(--border); 
+        }
+        .dropdown-content { padding: 20px; display: none; }
+        .dropdown-section.active .dropdown-content { display: block; }
+
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+        .card { background: #000; border: 1px solid var(--border); border-radius: 10px; padding: 20px; position: relative; }
+
+        .remove-card { 
+            position: absolute; top: 10px; right: 10px; 
+            cursor: pointer; opacity: 0.3; font-size: 0.8rem; 
+        }
+        .remove-card:hover { opacity: 1; }
+
+        .card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .brand-logo { 
+            width: 30px; height: 30px; border-radius: 4px; 
+            border: 1px solid var(--border); filter: grayscale(1) invert(1); 
+        }
+        .bank-name { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: #aaa; flex: 1; }
+
+        .cc-num { font-family: 'Fira Code', monospace; font-size: 1.1rem; margin: 10px 0; color: #fff; }
+
+        .billboard { 
+            background: #111; height: 20px; overflow: hidden; 
+            margin-top: 15px; border: 1px solid rgba(255,255,255,0.05); 
+        }
+        .billboard-track { 
+            display: flex; white-space: nowrap; animation: slide 25s linear infinite; 
+            font-family: monospace; font-size: 0.6rem; color: #888; align-items: center; height: 100%; 
+        }
+        @keyframes slide { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+
+        .badge { border: 1px solid var(--border); padding: 1px 6px; font-size: 0.7rem; border-radius: 4px; }
+        #status-bar { font-size: 0.7rem; color: #888; margin-bottom: 10px; font-family: monospace; }
+    </style>
 </head>
 <body>
 
@@ -90,7 +156,7 @@
     <div class="dropdown-section" id="sec-dead">
         <div class="dropdown-header" onclick="toggle('sec-dead')">
             <h2 style="font-size: 0.75rem; margin: 0; opacity: 0.5;">CORRUPTED <span class="badge" id="dCount">0</span></h2>
-            <span style="font-size:0.6rem">VIEW LOG</span>
+            <span style="font-size:0.6rem">VIEW ERROR LOG</span>
         </div>
         <div class="dropdown-content"><div id="deadCards" class="card-grid"></div></div>
     </div>
@@ -98,7 +164,7 @@
 
 <script>
 const API_BASE = "https://bing.ctinker-a7-b62.workers.dev";
-let lives = [];
+let livesList = [];
 let isPaused = false;
 let isStopped = false;
 let currentIndex = 0;
@@ -118,8 +184,7 @@ function updateCounters() {
     const d = document.getElementById('deadCards').children.length;
     document.getElementById('sCount').innerText = s;
     document.getElementById('dCount').innerText = d;
-    // Rebuild lives list for Copy All
-    lives = Array.from(document.getElementById('successCards').children).map(c => c.getAttribute('data-pipe'));
+    livesList = Array.from(document.getElementById('successCards').children).map(c => c.getAttribute('data-pipe'));
 }
 
 function generate() {
@@ -133,7 +198,7 @@ function generate() {
         let n = "";
         for(let char of pat) n += (char === 'x') ? Math.floor(Math.random()*10) : char;
         while(n.length < 15) n += Math.floor(Math.random()*10);
-        if(n.length === 15) n += getLuhn(n);
+        if(n.length === 15) n += getLuhnDigit(n);
         const mOut = mm || String(Math.floor(Math.random()*12)+1).padStart(2,'0');
         const yOut = yy || (2026 + Math.floor(Math.random()*5));
         const cOut = cvv || String(Math.floor(Math.random()*900)+100);
@@ -142,14 +207,14 @@ function generate() {
     document.getElementById('input').value = res.join('\n');
 }
 
-function getLuhn(n) {
-    let s = 0;
-    for(let i=0; i<n.length; i++) {
-        let d = parseInt(n[n.length-1-i]);
-        if(i%2===0) { d*=2; if(d>9) d-=9; }
-        s += d;
+function getLuhnDigit(n) {
+    let sum = 0;
+    for (let i = 0; i < n.length; i++) {
+        let d = parseInt(n[n.length - 1 - i]);
+        if (i % 2 === 0) { d *= 2; if (d > 9) d -= 9; }
+        sum += d;
     }
-    return (10 - (s % 10)) % 10;
+    return (10 - (sum % 10)) % 10;
 }
 
 async function validate() {
@@ -159,18 +224,12 @@ async function validate() {
         processNext();
         return;
     }
-    
     currentLines = document.getElementById('input').value.trim().split('\n').filter(l => l.trim());
     if (!currentLines.length) return;
-    
-    currentIndex = 0;
-    isStopped = false;
-    isPaused = false;
-    
+    currentIndex = 0; isStopped = false; isPaused = false;
     document.getElementById('btn-start').style.display = "none";
     document.getElementById('btn-pause').style.display = "block";
     document.getElementById('btn-stop').style.display = "block";
-    
     processNext();
 }
 
@@ -182,16 +241,27 @@ function pauseProcess() {
 }
 
 function stopProcess() {
-    isStopped = true;
-    isPaused = false;
+    isStopped = true; isPaused = false;
     document.getElementById('btn-start').style.display = "block";
     document.getElementById('btn-pause').style.display = "none";
     document.getElementById('btn-stop').style.display = "none";
     updateStatus("STOPPED");
 }
 
-function updateStatus(msg) {
-    document.getElementById('status-bar').innerText = msg;
+function updateStatus(msg) { document.getElementById('status-bar').innerText = msg; }
+
+async function fetchIdentity(country) {
+    try {
+        const res = await fetch(`https://randomuser.me/api/?nat=${country.toLowerCase() === 'gb' ? 'gb' : 'us'}`);
+        const data = await res.json();
+        const user = data.results[0];
+        return {
+            name: `${user.name.first} ${user.name.last}`,
+            address: `${user.location.street.number} ${user.location.street.name}, ${user.location.city}, ${user.location.state}`
+        };
+    } catch {
+        return { name: "John Doe", address: "123 Main St, New York, NY" };
+    }
 }
 
 async function processNext() {
@@ -199,60 +269,55 @@ async function processNext() {
         if (currentIndex >= currentLines.length) stopProcess();
         return;
     }
-
     const line = currentLines[currentIndex];
-    updateStatus(`PROCESSING ${currentIndex + 1} / ${currentLines.length}`);
-    
+    updateStatus(`FORGING ${currentIndex + 1} / ${currentLines.length}`);
     const p = line.split('|').map(s => s.trim());
     if (p.length >= 4) {
         const [num, mm, yy, cvv] = p;
         const ok = luhnCheck(num);
         const bin = await fetchBin(num.substring(0, 6));
-        renderCard(line, num, mm, yy, cvv, ok, bin, currentIndex + 1);
+        const identity = await fetchIdentity(bin.country);
+        renderCard(line, num, mm, yy, cvv, ok, bin, identity, currentIndex + 1);
     }
-
     currentIndex++;
-    setTimeout(processNext, 50); // Small delay to allow Stop/Pause to register
+    setTimeout(processNext, 80);
 }
 
-function renderCard(pipe, num, mm, yy, cvv, ok, bin, idx) {
+function renderCard(pipe, num, mm, yy, cvv, ok, bin, idnt, idx) {
     const pass = document.getElementById('successCards');
     const fail = document.getElementById('deadCards');
     const card = document.createElement('div');
     card.className = 'card';
     card.setAttribute('data-pipe', pipe);
-    
     if (ok) {
         card.innerHTML = `
             <span class="remove-card" onclick="removeMe(this)">✕</span>
             <div class="card-top">
                 <img src="https://www.google.com/s2/favicons?domain=${bin.issuer.split(' ')[0]}.com&sz=128" class="brand-logo" onerror="this.style.display='none'">
                 <span class="bank-name">${bin.issuer}</span>
-                <span style="font-size:0.55rem; opacity:0.4;">#${idx}</span>
+                <span style="font-size:0.5rem; opacity:0.4;">ID: ${idx}</span>
             </div>
             <div class="cc-num">${num.replace(/\d{4}(?=\d)/g, '$& ')}</div>
             <div style="font-size:0.75rem; opacity:0.6;">EXP: ${mm}/${yy} • CVV: ${cvv}</div>
-            <div class="billboard"><div class="billboard-track">BRAND: ${bin.brand} • TYPE: ${bin.type} • COUNTRY: ${bin.country}</div></div>
-            <div style="display:flex; gap:10px; margin-top:15px;">
-                <button style="width:auto; padding:5px 10px; font-size:0.6rem;" onclick="copyVal('${pipe}', this)">COPY</button>
+            <div class="billboard">
+                <div class="billboard-track">
+                    HOLDER: ${idnt.name.toUpperCase()} • BILLING: ${idnt.address.toUpperCase()} • BRAND: ${bin.brand} • COUNTRY: ${bin.country}
+                </div>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:15px;">
+                <button style="width:auto; padding:5px 10px; font-size:0.6rem;" onclick="copyVal('${pipe}', this)">PIPE</button>
+                <button style="width:auto; padding:5px 10px; font-size:0.6rem; background:transparent; color:#fff;" onclick="copyVal('${idnt.name}\\n${idnt.address}', this)">ADDR</button>
             </div>
         `;
         pass.appendChild(card);
     } else {
-        card.innerHTML = `
-            <span class="remove-card" onclick="removeMe(this)">✕</span>
-            <div class="cc-num" style="opacity:0.2">${num}</div>
-            <div style="font-size:0.55rem; color:#666">LUHN_INVALID</div>
-        `;
+        card.innerHTML = `<span class="remove-card" onclick="removeMe(this)">✕</span><div class="cc-num" style="opacity:0.2">${num}</div><div style="font-size:0.5rem; color:#444">BAD_CHECKSUM</div>`;
         fail.appendChild(card);
     }
     updateCounters();
 }
 
-function removeMe(el) {
-    el.parentElement.remove();
-    updateCounters();
-}
+function removeMe(el) { el.parentElement.remove(); updateCounters(); }
 
 function copyVal(t, b) {
     const el = document.createElement('textarea'); el.value = t; document.body.appendChild(el);
@@ -260,7 +325,7 @@ function copyVal(t, b) {
     const old = b.innerText; b.innerText = "DONE"; setTimeout(()=>b.innerText = old, 800);
 }
 
-function copyAll(e) { e.stopPropagation(); if(!lives.length) return; copyVal(lives.join('\n'), e.target); }
+function copyAll(e) { e.stopPropagation(); if(!livesList.length) return; copyVal(livesList.join('\n'), e.target); }
 
 async function fetchBin(b) {
     try {
