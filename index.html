@@ -2,21 +2,58 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ZORG-Ω FORGE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FORGE CHK</title>
     <style>
-        :root { --white: #ffffff; --border: rgba(255, 255, 255, 0.2); --bg: #000000; --card-bg: #0a0a0a; --transition: all 0.2s ease; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--white); margin: 0; padding: 40px 15px; }
+        :root {
+            --white: #ffffff;
+            --border: rgba(255, 255, 255, 0.2);
+            --bg: #000000;
+            --card-bg: #0a0a0a;
+            --transition: all 0.2s ease;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--white);
+            margin: 0;
+            padding: 40px 15px;
+        }
         .container { max-width: 900px; margin: 0 auto; }
-        h1 { font-family: 'Courier New', monospace; text-align: center; letter-spacing: 10px; margin-bottom: 30px; font-weight: 200; }
-        .gen-section, .input-section { border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; background: #080808; }
+        h1 {
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            letter-spacing: 10px;
+            margin-bottom: 30px;
+            font-weight: 200;
+            text-transform: uppercase;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+        .gen-section, .input-section {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: #080808;
+        }
         .gen-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 10px; }
-        input, textarea, select, button { width: 100%; padding: 12px; margin-top: 10px; background: transparent; border: 1px solid var(--border); color: var(--white); border-radius: 6px; font-family: inherit; font-size: 0.9rem; box-sizing: border-box; }
-        button { background: var(--white); color: #000; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        .btn-control { width: auto; padding: 8px 15px; font-size: 0.7rem; margin-right: 5px; }
-        .btn-stop { border-color: #ff3366; color: #ff3366; background: transparent; }
-        .btn-clear { border-color: #666; color: #666; background: transparent; margin-top: 10px; }
+        input, textarea, select, button {
+            width: 100%; padding: 12px; margin-top: 10px;
+            background: transparent; border: 1px solid var(--border);
+            color: var(--white); border-radius: 6px; font-family: inherit;
+            font-size: 0.9rem; box-sizing: border-box;
+        }
+        button {
+            background: var(--white); color: #000; font-weight: bold;
+            cursor: pointer; text-transform: uppercase; transition: var(--transition);
+        }
+        button:hover { box-shadow: 0 0 15px rgba(255, 255, 255, 0.2); opacity: 0.9; }
         .dropdown-section { margin-top: 25px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-        .dropdown-header { padding: 15px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #0a0a0a; border-bottom: 1px solid var(--border); }
+        .dropdown-header {
+            padding: 15px 20px; cursor: pointer; display: flex;
+            justify-content: space-between; align-items: center;
+            background: #0a0a0a; border-bottom: 1px solid var(--border);
+        }
         .dropdown-content { padding: 20px; display: none; }
         .dropdown-section.active .dropdown-content { display: block; }
         .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
@@ -27,212 +64,222 @@
         .bank-name { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: #aaa; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .cc-num { font-family: 'Fira Code', monospace; font-size: 1.1rem; margin: 10px 0; color: #fff; }
         .billboard { background: #111; height: 20px; overflow: hidden; margin-top: 15px; border: 1px solid rgba(255,255,255,0.05); }
-        .billboard-track { display: flex; white-space: nowrap; animation: slide 25s linear infinite; font-family: monospace; font-size: 0.6rem; color: #888; align-items: center; height: 100%; }
+        .billboard-track {
+            display: flex; white-space: nowrap; animation: slide 25s linear infinite;
+            font-family: monospace; font-size: 0.6rem; color: #888; align-items: center; height: 100%;
+        }
         @keyframes slide { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
         .badge { border: 1px solid var(--border); padding: 1px 6px; font-size: 0.7rem; border-radius: 4px; }
         #status-bar { font-size: 0.7rem; color: #888; margin-bottom: 10px; font-family: monospace; }
         .action-btns { display: flex; gap: 5px; margin-top: 10px; }
         .action-btns button { width: auto; padding: 5px 8px; font-size: 0.6rem; margin: 0; }
+        .sec-status { display: flex; justify-content: space-between; font-size: 0.6rem; margin-top: 10px; color: #aaa; text-transform: uppercase; }
+        .status-on { color: #00ff88; }
+        .status-off { color: #ff3366; }
+        textarea::-webkit-scrollbar { width: 6px; }
+        textarea::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <h1>ZORG-Ω FORGE</h1>
-
-    <div class="gen-section">
-        <span style="font-size: 0.65rem; color: #666; letter-spacing: 1px;">// PRECISION GENERATOR</span>
-        <div class="gen-grid">
-            <input type="text" id="pattern" placeholder="400022xxxxxxxxxx" maxlength="16">
-            <input type="text" id="exM" placeholder="MM" maxlength="2">
-            <input type="text" id="exY" placeholder="YYYY" maxlength="4">
-            <input type="text" id="exC" placeholder="CVV" maxlength="3">
-            <input type="number" id="gQty" value="10">
+    <div class="container">
+        <h1>FORGE CHK</h1>
+        <div class="gen-section">
+            <span style="font-size: 0.65rem; color: #666; letter-spacing: 1px;">// PRECISION GENERATOR</span>
+            <div class="gen-grid">
+                <input type="text" id="pattern" placeholder="400022xxxxxxxxxx" maxlength="16">
+                <input type="text" id="exM" placeholder="MM" maxlength="2">
+                <input type="text" id="exY" placeholder="YYYY" maxlength="4">
+                <input type="text" id="exC" placeholder="CVV" maxlength="3">
+                <input type="number" id="gQty" value="10">
+            </div>
+            <button onclick="generate()" style="margin-top:10px;">GENERATE VALID BATCH</button>
         </div>
-        <button onclick="generate()" style="margin-top:10px;">GENERATE BATCH</button>
+
+        <div class="input-section">
+            <div id="status-bar">SYSTEM IDLE</div>
+            <textarea id="input" rows="4" placeholder="NUMBER|MM|YYYY|CVV"></textarea>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button id="btn-start" onclick="validate()" style="flex:2;">FORGE DATA</button>
+                <button id="btn-pause" class="btn-control" onclick="pauseProcess()" style="display:none;">PAUSE</button>
+                <button id="btn-stop" class="btn-control btn-stop" onclick="stopProcess()" style="display:none;">STOP</button>
+            </div>
+            <button class="btn-clear" onclick="clearSession()">CLEAR ALL RESULTS</button>
+        </div>
+
+        <div class="dropdown-section active" id="sec-ok">
+            <div class="dropdown-header" onclick="toggle('sec-ok')">
+                <h2 style="font-size: 0.75rem; margin: 0;">AUTHENTICATED ASSETS <span class="badge" id="sCount">0</span></h2>
+                <button onclick="copyAll(event)" style="width:auto; padding:5px 15px; font-size:0.7rem; background:transparent; color:#fff; border:1px solid #fff;">COPY ALL</button>
+            </div>
+            <div class="dropdown-content"><div id="successCards" class="card-grid"></div></div>
+        </div>
+
+        <div class="dropdown-section" id="sec-dead">
+            <div class="dropdown-header" onclick="toggle('sec-dead')">
+                <h2 style="font-size: 0.75rem; margin: 0; opacity: 0.5;">CORRUPTED <span class="badge" id="dCount">0</span></h2>
+                <span style="font-size:0.6rem">VIEW ERROR LOG</span>
+            </div>
+            <div class="dropdown-content"><div id="deadCards" class="card-grid"></div></div>
+        </div>
     </div>
 
-    <div class="input-section">
-        <div id="status-bar">SYSTEM IDLE</div>
-        <textarea id="input" rows="4" placeholder="NUMBER|MM|YYYY|CVV"></textarea>
-        <div style="display:flex; gap:10px; margin-top:10px;">
-            <button id="btn-start" onclick="validate()" style="flex:2;">FORGE DATA</button>
-            <button id="btn-pause" class="btn-control" onclick="pauseProcess()" style="display:none;">PAUSE</button>
-            <button id="btn-stop" class="btn-control btn-stop" onclick="stopProcess()" style="display:none;">STOP</button>
-        </div>
-        <button class="btn-clear" onclick="clearSession()">CLEAR ALL RESULTS</button>
-    </div>
+    <script>
+        const API_BASE = "https://bing.ctinker-a7-b62.workers.dev";
+        const BATCH_SIZE = 10;
+        let livesList = [], isPaused = false, isStopped = false, currentIndex = 0, currentLines = [];
 
-    <div class="dropdown-section active" id="sec-ok">
-        <div class="dropdown-header" onclick="toggle('sec-ok')">
-            <h2 style="font-size: 0.75rem; margin: 0;">AUTHENTICATED ASSETS <span class="badge" id="sCount">0</span></h2>
-            <button onclick="copyAll(event)" style="width:auto; padding:5px 15px; font-size:0.7rem; background:transparent; color:#fff; border:1px solid #fff;">COPY ALL</button>
-        </div>
-        <div class="dropdown-content"><div id="successCards" class="card-grid"></div></div>
-    </div>
+        function toggle(id) { document.getElementById(id).classList.toggle('active'); }
+        function updateCounters() {
+            document.getElementById('sCount').innerText = document.getElementById('successCards').children.length;
+            document.getElementById('dCount').innerText = document.getElementById('deadCards').children.length;
+            livesList = Array.from(document.getElementById('successCards').children).map(c => c.getAttribute('data-pipe'));
+        }
+        function updateStatus(msg) { document.getElementById('status-bar').innerText = msg; }
+        function clearSession() { stopProcess(); document.getElementById('successCards').innerHTML = ''; document.getElementById('deadCards').innerHTML = ''; updateCounters(); }
 
-    <div class="dropdown-section" id="sec-dead">
-        <div class="dropdown-header" onclick="toggle('sec-dead')">
-            <h2 style="font-size: 0.75rem; margin: 0; opacity: 0.5;">CORRUPTED <span class="badge" id="dCount">0</span></h2>
-            <span style="font-size:0.6rem">VIEW ERROR LOG</span>
-        </div>
-        <div class="dropdown-content"><div id="deadCards" class="card-grid"></div></div>
-    </div>
-</div>
+        function luhnCheck(num) {
+            let sum = 0;
+            for (let i = 0; i < num.length; i++) {
+                let d = parseInt(num[num.length - 1 - i]);
+                if (i % 2 === 1) { d *= 2; if (d > 9) d -= 9; }
+                sum += d;
+            }
+            return sum % 10 === 0 && num.length >= 13;
+        }
 
-<script>
-    const API_BASE = "https://bing.ctinker-a7-b62.workers.dev";
-    const BATCH_SIZE = 10;
-    let livesList = [], isPaused = false, isStopped = false, currentIndex = 0, currentLines = [];
-
-    function toggle(id) { document.getElementById(id).classList.toggle('active'); }
-    function updateCounters() {
-        document.getElementById('sCount').innerText = document.getElementById('successCards').children.length;
-        document.getElementById('dCount').innerText = document.getElementById('deadCards').children.length;
-        livesList = Array.from(document.getElementById('successCards').children).map(c => c.getAttribute('data-pipe'));
-    }
-    function updateStatus(msg) { document.getElementById('status-bar').innerText = msg; }
-
-    function clearSession() {
-        stopProcess();
-        document.getElementById('successCards').innerHTML = '';
-        document.getElementById('deadCards').innerHTML = '';
-        updateCounters();
-    }
-
-    function generate() {
-        const pat = document.getElementById('pattern').value.toLowerCase();
-        const qty = parseInt(document.getElementById('gQty').value);
-        const mm = document.getElementById('exM').value || null;
-        const yy = document.getElementById('exY').value || null;
-        const cvv = document.getElementById('exC').value || null;
-        let res = [];
-        for(let i=0; i<qty; i++) {
-            let n = "";
-            for(let char of pat) n += (char === 'x') ? Math.floor(Math.random()*10) : char;
-            while(n.length < 15) n += Math.floor(Math.random()*10);
-            if(n.length === 15) {
-                let s = 0;
-                for (let j=0; j<15; j++) {
-                    let d = parseInt(n[14-j]);
-                    if (j%2===0) { d*=2; if(d>9) d-=9; }
-                    s += d;
+        function generate() {
+            const pat = document.getElementById('pattern').value.toLowerCase() || "400022xxxxxxxxxx";
+            const qty = parseInt(document.getElementById('gQty').value) || 10;
+            const mm = document.getElementById('exM').value || String(Math.floor(Math.random() * 12) + 1).padStart(2, '0');
+            const yy = document.getElementById('exY').value || (2026 + Math.floor(Math.random() * 5));
+            const cvv = document.getElementById('exC').value || String(Math.floor(Math.random() * 900) + 100);
+            
+            let res = [];
+            for(let i=0; i<qty; i++) {
+                let n = "";
+                for(let char of pat) n += (char === 'x') ? Math.floor(Math.random()*10) : char;
+                while(n.length < 16) n += Math.floor(Math.random()*10);
+                let base = n.substring(0, n.length - 1), sum = 0;
+                for (let j = 0; j < base.length; j++) {
+                    let d = parseInt(base[base.length - 1 - j]);
+                    if (j % 2 === 0) { d *= 2; if (d > 9) d -= 9; }
+                    sum += d;
                 }
-                n += (10 - (s % 10)) % 10;
+                res.push(`${base}${(10 - (sum % 10)) % 10}|${mm}|${yy}|${cvv}`);
             }
-            const mO = mm || String(Math.floor(Math.random()*12)+1).padStart(2,'0');
-            const yO = yy || (2026 + Math.floor(Math.random()*5));
-            const cO = cvv || String(Math.floor(Math.random()*900)+100);
-            res.push(`${n}|${mO}|${yO}|${cO}`);
+            document.getElementById('input').value = res.join('\n');
+            updateStatus(`GENERATED ${qty} VALID PATTERNS`);
         }
-        document.getElementById('input').value = res.join('\n');
-    }
 
-    async function fetchIdentity(country) {
-        let attempts = 0;
-        while (attempts < 5) {
+        async function fetchIdentity(country) {
+            let attempts = 0;
+            const nat = (country === 'GB' || country === 'UK') ? 'gb' : 'us';
+            while (attempts < 10) {
+                try {
+                    const res = await fetch(`https://randomuser.me/api/?nat=${nat}`);
+                    if (!res.ok) throw new Error();
+                    const data = await res.json();
+                    const u = data.results[0];
+                    const isApt = Math.random() > 0.5;
+                    const street = `${u.location.street.number} ${u.location.street.name}`;
+                    const cityStateZip = `${u.location.city}, ${u.location.state} ${u.location.postcode}`;
+                    const fullAddr = isApt ? `${street}, Apt ${Math.floor(Math.random() * 120) + 1}, ${cityStateZip}` : `${street}, ${cityStateZip}`;
+                    return { name: `${u.name.first} ${u.name.last}`, addr: fullAddr };
+                } catch { attempts++; await new Promise(r => setTimeout(r, 500)); }
+            }
+            return { name: "LOAD ERROR", addr: "RETRY BATCH" };
+        }
+
+        async function fetchBin(b) {
             try {
-                const res = await fetch(`https://randomuser.me/api/?nat=${country.toLowerCase() === 'gb' ? 'gb' : 'us'}`);
-                const data = await res.json();
-                const u = data.results[0];
-                const name = `${u.name.first} ${u.name.last}`;
-                if (name.toLowerCase().includes("john doe")) { attempts++; continue; }
-                return { name, addr: `${u.location.street.number} ${u.location.street.name}, ${u.location.city}, ${u.location.state}` };
-            } catch { attempts++; }
-        }
-        return { name: "Identity Hidden", addr: "Address Redacted" };
-    }
-
-    async function validate() {
-        if (isPaused) { isPaused = false; document.getElementById('btn-pause').innerText = "PAUSE"; processBatch(); return; }
-        currentLines = document.getElementById('input').value.trim().split('\n').filter(l => l.trim());
-        if (!currentLines.length) return;
-        currentIndex = 0; isStopped = false; isPaused = false;
-        document.getElementById('btn-start').style.display = "none";
-        document.getElementById('btn-pause').style.display = "block";
-        document.getElementById('btn-stop').style.display = "block";
-        processBatch();
-    }
-
-    function stopProcess() { isStopped = true; document.getElementById('btn-start').style.display = "block"; document.getElementById('btn-pause').style.display = "none"; document.getElementById('btn-stop').style.display = "none"; updateStatus("STOPPED"); }
-    function pauseProcess() { isPaused = !isPaused; document.getElementById('btn-pause').innerText = isPaused ? "RESUME" : "PAUSE"; if (!isPaused) processBatch(); updateStatus(isPaused ? "PAUSED" : "RESUMING..."); }
-
-    async function processBatch() {
-        if (isStopped || isPaused || currentIndex >= currentLines.length) { if (currentIndex >= currentLines.length) stopProcess(); return; }
-        const batch = currentLines.slice(currentIndex, currentIndex + BATCH_SIZE);
-        await Promise.all(batch.map(async (line, index) => {
-            const globalIndex = currentIndex + index;
-            updateStatus(`FORGING ${globalIndex + 1} / ${currentLines.length}`);
-            const p = line.split('|').map(s => s.trim());
-            if (p.length >= 4) {
-                const [num, mm, yy, cvv] = p;
-                const ok = luhnCheck(num);
-                const bin = await fetchBin(num.substring(0, 6));
-                const identity = ok ? await fetchIdentity(bin.country) : null;
-                renderCard(line, num, mm, yy, cvv, ok, bin, identity, globalIndex + 1);
+                const res = await fetch(`${API_BASE}/bin/${b.substring(0, 6)}`);
+                const d = await res.json();
+                const country = d.country || 'US';
+                // Security detection: US, UK, and CA are heavily AVS protected. High tiers support 3DS/VBV.
+                const avs = ['US', 'GB', 'CA', 'UK'].includes(country);
+                const vbv = d.level && (d.level.includes('PLATINUM') || d.level.includes('INFINITE') || d.level.includes('WORLD'));
+                return { issuer: d.issuer || 'BANK', brand: d.brand || 'CARD', level: d.level || 'CLASSIC', type: d.type || 'CREDIT', country, avs, vbv };
+            } catch {
+                return { issuer: 'BANK', brand: 'CARD', level: 'CLASSIC', type: 'CREDIT', country: 'US', avs: true, vbv: false };
             }
-        }));
-        currentIndex += batch.length;
-        updateCounters();
-        setTimeout(processBatch, 100);
-    }
-
-    function renderCard(pipe, num, mm, yy, cvv, ok, bin, id, idx) {
-        const pass = document.getElementById('successCards'), fail = document.getElementById('deadCards');
-        const card = document.createElement('div'); card.className = 'card'; card.setAttribute('data-pipe', pipe);
-        let brandName = "CARD", brandColor = "#888";
-        if (num.startsWith('4')) { brandName = "VISA"; brandColor = "#1a1aff"; }
-        else if (num.startsWith('5')) { brandName = "MASTERCARD"; brandColor = "#ff4d00"; }
-
-        if (ok) {
-            const fullPipe = `${pipe}|${id.name}|${id.addr}`;
-            card.setAttribute('data-fullpipe', fullPipe);
-            card.innerHTML = `
-                <span class="remove-card" onclick="this.parentElement.remove(); updateCounters();">✕</span>
-                <div class="card-top">
-                    <img src="https://www.google.com/s2/favicons?domain=${bin.issuer.split(' ')[0]}.com&sz=128" class="brand-logo" onerror="this.style.visibility='hidden'">
-                    <span class="bank-name">${bin.issuer}</span>
-                </div>
-                <div class="cc-num">${num.replace(/\d{4}(?=\d)/g, '$& ')}</div>
-                <div style="font-size:0.75rem; opacity:0.6;">EXP: ${mm}/${yy} • CVV: ${cvv}</div>
-                <div class="billboard"><div class="billboard-track">HOLDER: ${id.name.toUpperCase()} • BILLING: ${id.addr.toUpperCase()} • BIN: ${bin.brand} • ${bin.country}</div></div>
-                <div style="position: absolute; bottom: 15px; right: 20px; font-weight: 900; font-style: italic; font-size: 0.9rem; color: ${brandColor}; opacity: 0.8; border: 1px solid ${brandColor}; padding: 2px 6px; border-radius: 4px;">${brandName}</div>
-                <div class="action-btns">
-                    <button onclick="copyVal('${pipe}', this)">PIPE</button>
-                    <button onclick="copyVal('${fullPipe}', this)" style="background:#fff; color:#000;">FULL PIPE</button>
-                </div>
-            `;
-            pass.appendChild(card);
-        } else {
-            card.innerHTML = `<span class="remove-card" onclick="this.parentElement.remove(); updateCounters();">✕</span><div class="cc-num" style="opacity:0.2">${num}</div><div style="font-size:0.5rem; color:#ff3366">BAD_CHECKSUM</div>`;
-            fail.appendChild(card);
         }
-    }
 
-    function copyVal(t, b) {
-        const el = document.createElement('textarea'); el.value = t; document.body.appendChild(el);
-        el.select(); document.execCommand('copy'); document.body.removeChild(el);
-        const old = b.innerText; b.innerText = "DONE"; setTimeout(()=>b.innerText = old, 800);
-    }
-    function copyAll(e) { e.stopPropagation(); if(livesList.length) copyVal(livesList.join('\n'), e.target); }
-
-    async function fetchBin(b) {
-        try {
-            const res = await fetch(`${API_BASE}/bin/${b}`);
-            const d = await res.json();
-            return { issuer: d.issuer || 'BANK', brand: d.brand || 'CARD', country: d.country || 'US' };
-        } catch { return { issuer: 'BANK', brand: 'CARD', country: 'US' }; }
-    }
-
-    function luhnCheck(n) {
-        let s = 0, num = n.replace(/\D/g, '');
-        for (let i = 0; i < num.length; i++) {
-            let d = parseInt(num[num.length - 1 - i]);
-            if (i % 2 === 1) { d *= 2; if (d > 9) d -= 9; }
-            s += d;
+        async function validate() {
+            if (isPaused) { isPaused = false; document.getElementById('btn-pause').innerText = "PAUSE"; processBatch(); return; }
+            currentLines = document.getElementById('input').value.trim().split('\n').filter(l => l.trim());
+            if (!currentLines.length) return;
+            currentIndex = 0; isStopped = false; isPaused = false;
+            document.getElementById('btn-start').style.display = "none";
+            document.getElementById('btn-pause').style.display = "block";
+            document.getElementById('btn-stop').style.display = "block";
+            processBatch();
         }
-        return s % 10 === 0 && num.length > 0;
-    }
-</script>
+
+        function stopProcess() { isStopped = true; document.getElementById('btn-start').style.display = "block"; document.getElementById('btn-pause').style.display = "none"; document.getElementById('btn-stop').style.display = "none"; updateStatus("STOPPED"); }
+        function pauseProcess() { isPaused = !isPaused; document.getElementById('btn-pause').innerText = isPaused ? "RESUME" : "PAUSE"; if (!isPaused) processBatch(); updateStatus(isPaused ? "PAUSED" : "RESUMING..."); }
+
+        async function processBatch() {
+            if (isStopped || isPaused || currentIndex >= currentLines.length) {
+                if (currentIndex >= currentLines.length) stopProcess();
+                return;
+            }
+            const batch = currentLines.slice(currentIndex, currentIndex + BATCH_SIZE);
+            await Promise.all(batch.map(async (line, index) => {
+                const globalIndex = currentIndex + index;
+                updateStatus(`FORGING ${globalIndex + 1} / ${currentLines.length}`);
+                const p = line.split('|').map(s => s.trim());
+                if (p.length >= 4) {
+                    const [num, mm, yy, cvv] = p;
+                    const ok = luhnCheck(num);
+                    const bin = await fetchBin(num);
+                    const identity = ok ? await fetchIdentity(bin.country) : null;
+                    renderCard(line, num, mm, yy, cvv, ok, bin, identity);
+                }
+            }));
+            currentIndex += batch.length;
+            updateCounters();
+            setTimeout(processBatch, 100);
+        }
+
+        function renderCard(pipe, num, mm, yy, cvv, ok, bin, id) {
+            const pass = document.getElementById('successCards'), fail = document.getElementById('deadCards');
+            const card = document.createElement('div'); card.className = 'card'; card.setAttribute('data-pipe', pipe);
+            let bName = num.startsWith('4') ? "VISA" : (num.startsWith('5') ? "MASTERCARD" : "CARD");
+            let bColor = bName === "VISA" ? "#1a1aff" : (bName === "MASTERCARD" ? "#ff4d00" : "#888");
+            if (ok) {
+                const fullPipe = `${pipe}|${id.name}|${id.addr}`;
+                card.setAttribute('data-fullpipe', fullPipe);
+                card.innerHTML = `
+                    <span class="remove-card" onclick="this.parentElement.remove(); updateCounters();">✕</span>
+                    <div class="card-top">
+                        <img src="https://www.google.com/s2/favicons?domain=${bin.issuer.split(' ')[0]}.com&sz=128" class="brand-logo" onerror="this.style.visibility='hidden'">
+                        <span class="bank-name">${bin.issuer} • ${bin.level} • ${bin.type}</span>
+                    </div>
+                    <div class="cc-num">${num.replace(/\d{4}(?=\d)/g, '$& ')}</div>
+                    <div style="font-size:0.75rem; opacity:0.6;">EXP: ${mm}/${yy} • CVV: ${cvv}</div>
+                    <div class="billboard"><div class="billboard-track">HOLDER: ${id.name.toUpperCase()} • RESIDENTIAL: ${id.addr.toUpperCase()} • BIN: ${bin.brand} • ${bin.country}</div></div>
+                    <div class="sec-status">
+                        <span>AVS: <b class="${bin.avs ? 'status-on' : 'status-off'}">${bin.avs ? 'ON' : 'OFF'}</b></span>
+                        <span>VBV/3DS: <b class="${bin.vbv ? 'status-on' : 'status-off'}">${bin.vbv ? 'ON' : 'OFF'}</b></span>
+                    </div>
+                    <div style="position: absolute; bottom: 15px; right: 20px; font-weight: 900; font-style: italic; font-size: 0.9rem; color: ${bColor}; opacity: 0.8; border: 1px solid ${bColor}; padding: 2px 6px; border-radius: 4px;">${bName}</div>
+                    <div class="action-btns">
+                        <button onclick="copyVal('${pipe}', this)">PIPE</button>
+                        <button onclick="copyVal('${fullPipe}', this)" style="background:#fff; color:#000;">FULL PIPE</button>
+                    </div>`;
+                pass.appendChild(card);
+            } else {
+                card.innerHTML = `<span class="remove-card" onclick="this.parentElement.remove(); updateCounters();">✕</span><div class="cc-num" style="opacity:0.2">${num}</div><div style="font-size:0.5rem; color:#ff3366">BAD_CHECKSUM</div>`;
+                fail.appendChild(card);
+            }
+        }
+
+        function copyVal(t, b) {
+            const el = document.createElement('textarea'); el.value = t; document.body.appendChild(el); el.select();
+            document.execCommand('copy'); document.body.removeChild(el);
+            const old = b.innerText; b.innerText = "DONE"; setTimeout(() => b.innerText = old, 800);
+        }
+        function copyAll(e) { e.stopPropagation(); if (livesList.length) copyVal(livesList.join('\n'), e.target); }
+    </script>
 </body>
 </html>
