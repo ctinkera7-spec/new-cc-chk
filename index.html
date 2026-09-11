@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ZORG-Ω FORGE</title>
+    <title>FORGE</title>
     <style>
         :root { 
             --white: #ffffff; 
@@ -15,7 +15,7 @@
         }
         body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--white); margin: 0; padding: 30px 15px; }
         .container { max-width: 950px; margin: 0 auto; }
-        h1 { font-family: 'Courier New', monospace; text-align: center; letter-spacing: 12px; margin-bottom: 25px; font-weight: 200; font-size: 2.2rem; }
+        h1 { font-family: 'Courier New', monospace; text-align: center; letter-spacing: 14px; margin-bottom: 25px; font-weight: 200; font-size: 2.4rem; }
         
         .gen-section, .input-section { border: 1px solid var(--border); border-radius: 12px; padding: 22px; margin-bottom: 20px; background: var(--card-bg); }
         .gen-grid { display: grid; grid-template-columns: 2.5fr 1fr 1fr 1fr 1fr; gap: 10px; }
@@ -42,6 +42,9 @@
         .progress-container { width: 100%; height: 6px; background: #161616; border-radius: 4px; margin: 15px 0 5px 0; overflow: hidden; display: none; }
         .progress-bar { width: 0%; height: 100%; background: var(--accent-green); transition: width 0.15s ease; }
 
+        /* Input Info Bar */
+        .input-info-bar { display: flex; justify-content: space-between; font-size: 0.68rem; color: #666; font-family: monospace; margin-top: 4px; padding: 0 4px; }
+
         /* Accordion */
         .dropdown-section { margin-top: 25px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
         .dropdown-header { padding: 16px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #0d0d0d; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
@@ -63,7 +66,8 @@
         .bank-name { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .card-level { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: #777; font-family: monospace; }
         
-        .cc-num { font-family: 'Fira Code', monospace; font-size: 1.15rem; margin: 12px 0; color: #fff; letter-spacing: 2px; }
+        .cc-num { font-family: 'Fira Code', monospace; font-size: 1.15rem; margin: 12px 0; color: #fff; letter-spacing: 2px; cursor: pointer; title: "Click to copy"; }
+        .cc-num:hover { color: var(--accent-green); }
         .meta-row { font-size: 0.75rem; opacity: 0.6; display: flex; gap: 20px; font-family: monospace; }
         
         /* Billboard Slider */
@@ -82,12 +86,15 @@
         
         .provider-badge { position: absolute; bottom: 18px; right: 20px; font-weight: 900; font-style: italic; font-size: 0.85rem; padding: 2px 8px; border-radius: 4px; letter-spacing: 1px; }
         .search-filter { width: 100%; margin-bottom: 15px; padding: 8px 12px; font-size: 0.75rem; background: #0a0a0a; border: 1px solid var(--border); color: #fff; border-radius: 6px; }
+
+        /* Sleek Toast Notification */
+        #toast { position: fixed; bottom: 25px; right: 25px; background: #111; border: 1px solid var(--border); color: #fff; padding: 10px 18px; border-radius: 6px; font-size: 0.75rem; font-family: monospace; z-index: 9999; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>ZORG-Ω FORGE</h1>
+    <h1>FORGE</h1>
 
     <!-- GENERATOR SECTION -->
     <div class="gen-section">
@@ -115,13 +122,18 @@
             <div class="progress-bar" id="prog-bar"></div>
         </div>
 
-        <textarea id="input" rows="5" placeholder="NUMBER|MM|YYYY|CVV"></textarea>
+        <textarea id="input" rows="5" placeholder="NUMBER|MM|YYYY|CVV" oninput="updateLineStats()"></textarea>
+        <div class="input-info-bar">
+            <span id="line-counter">0 lines queued</span>
+            <span>Shortcut: Ctrl+Enter to start • Esc to stop</span>
+        </div>
         
         <div style="display:flex; gap:8px; margin-top:8px; flex-wrap: wrap;">
             <button id="btn-start" onclick="validate()" style="flex:2;">FORGE DATA</button>
             <button id="btn-pause" class="btn-control" onclick="pauseProcess()" style="display:none;">PAUSE</button>
             <button id="btn-stop" class="btn-control btn-stop" onclick="stopProcess()" style="display:none;">STOP</button>
-            <button onclick="loadSample()" class="btn-control btn-secondary" style="flex:1;">LOAD SAMPLE</button>
+            <button onclick="cleanInput()" class="btn-control btn-secondary">CLEAN / SANITIZE</button>
+            <button onclick="loadSample()" class="btn-control btn-secondary">LOAD SAMPLE</button>
             <label class="btn-control btn-secondary" style="margin-top:8px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                 IMPORT .TXT <input type="file" id="fileInput" accept=".txt" style="display:none;" onchange="importTxt(event)">
             </label>
@@ -163,10 +175,45 @@
     </div>
 </div>
 
+<div id="toast"></div>
+
 <script>
     const API_BASE = "https://bing.ctinker-a7-b62.workers.dev";
     const BATCH_SIZE = 5;
     let isPaused = false, isStopped = false, currentIndex = 0, currentLines = [];
+
+    // --- KEYBOARD SHORTCUTS ---
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            validate();
+        } else if (e.key === 'Escape') {
+            if (!isStopped) stopProcess();
+        }
+    });
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 1800);
+    }
+
+    function updateLineStats() {
+        const val = document.getElementById('input').value.trim();
+        const count = val ? val.split('\n').filter(l => l.trim()).length : 0;
+        document.getElementById('line-counter').innerText = `${count} line${count === 1 ? '' : 's'} queued`;
+    }
+
+    function cleanInput() {
+        const el = document.getElementById('input');
+        const lines = el.value.split('\n')
+            .map(l => l.replace(/[,;]/g, '|').replace(/\s*\|\s*/g, '|').trim())
+            .filter(l => l.length > 0);
+        el.value = lines.join('\n');
+        updateLineStats();
+        showToast("Input cleaned & normalized");
+    }
 
     function toggle(id) { document.getElementById(id).classList.toggle('active'); }
     function updateStatus(msg) { document.getElementById('status-text').innerText = msg; }
@@ -188,35 +235,38 @@
         document.getElementById('deadCards').innerHTML = '';
         document.getElementById('prog-wrap').style.display = 'none';
         document.getElementById('prog-bar').style.width = '0%';
+        updateLineStats();
         updateCounters();
         updateStatus("SESSION CLEARED");
+        showToast("Session cleared");
     }
 
-    // --- QUICK TEST SAMPLE LOADER ---
     function loadSample() {
         document.getElementById('input').value = [
             "4008930000000010|12|2030|892",
             "4008930000000028|08|2028|441",
             "4008930000000036|05|2027|123",
             "5424180000000002|10|2029|990",
-            "4008930000009999|11|2026|000" // Intentional invalid luhn
+            "4008930000009999|11|2026|000"
         ].join('\n');
+        updateLineStats();
         updateStatus("SAMPLE DATA LOADED");
+        showToast("Loaded sample batch");
     }
 
-    // --- TXT FILE IMPORTER ---
     function importTxt(e) {
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (event) => {
             document.getElementById('input').value = event.target.result;
+            updateLineStats();
             updateStatus(`IMPORTED ${file.name}`);
+            showToast(`Loaded ${file.name}`);
         };
         reader.readAsText(file);
     }
 
-    // --- GENERATOR WITH LUHN INTEGRITY ---
     function generate(autoLoad) {
         const pat = document.getElementById('pattern').value.toLowerCase().trim() || '400893xxxxxxxxxx';
         const qty = parseInt(document.getElementById('gQty').value) || 10;
@@ -225,17 +275,17 @@
         const cvv = document.getElementById('exC').value || null;
         let res = [];
 
-        for(let i = 0; i < qty; i++) {
+        for (let i = 0; i < qty; i++) {
             let n = "";
-            for(let char of pat) n += (char === 'x') ? Math.floor(Math.random() * 10) : char;
-            while(n.length < 15) n += Math.floor(Math.random() * 10);
+            for (let char of pat) n += (char === 'x') ? Math.floor(Math.random() * 10) : char;
+            while (n.length < 15) n += Math.floor(Math.random() * 10);
             
-            if(n.length >= 15) {
+            if (n.length >= 15) {
                 const base = n.substring(0, 15);
                 let s = 0;
                 for (let j = 0; j < 15; j++) {
                     let d = parseInt(base[14 - j]);
-                    if (j % 2 === 0) { d *= 2; if(d > 9) d -= 9; }
+                    if (j % 2 === 0) { d *= 2; if (d > 9) d -= 9; }
                     s += d;
                 }
                 n = base + ((10 - (s % 10)) % 10);
@@ -249,11 +299,12 @@
 
         const out = res.join('\n');
         document.getElementById('input').value = out;
+        updateLineStats();
         updateStatus(`GENERATED ${qty} CARDS`);
-        if(autoLoad) validate();
+        showToast(`Generated ${qty} cards`);
+        if (autoLoad) validate();
     }
 
-    // --- REAL ADDRESS RESOLVER WITH RELIABLE FALLBACKS ---
     const realUsLocations = [
         { street: "742 Evergreen Terrace", city: "Springfield", state: "OR", zip: "97477" },
         { street: "10880 Wilshire Blvd", city: "Los Angeles", state: "CA", zip: "90024" },
@@ -281,9 +332,8 @@
                     addr: `${u.location.street.number} ${u.location.street.name}, ${u.location.city}, ${u.location.state} ${u.location.postcode}`
                 };
             }
-        } catch(e) { /* fallback below */ }
+        } catch(e) { }
 
-        // Guaranteed Real Geolocation fallback
         const loc = realUsLocations[Math.floor(Math.random() * realUsLocations.length)];
         const fullName = `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
         const buildingNum = Math.floor(Math.random() * 2500) + 102;
@@ -293,7 +343,6 @@
         };
     }
 
-    // --- ACCURATE BIN RESOLUTION WITH INTEL EMBLEM GENERATOR ---
     function resolveBankDomain(issuer) {
         const clean = (issuer || "").toLowerCase().replace(/[^a-z0-9]/g, '');
         if (clean.includes("peoples")) return "bankatpeoples.com";
@@ -321,12 +370,10 @@
             }
         } catch (e) { }
 
-        // Fallback standard
         const brand = bin6.startsWith('4') ? 'VISA' : bin6.startsWith('5') ? 'MASTERCARD' : 'CARD';
         return { issuer: "PEOPLESBANK", brand: brand, level: "DEBIT", country: "United States", domain: "bankatpeoples.com" };
     }
 
-    // --- VALIDATION & QUEUE ENGINE ---
     async function validate() {
         if (isPaused) {
             isPaused = false;
@@ -335,7 +382,10 @@
             return;
         }
         currentLines = document.getElementById('input').value.trim().split('\n').filter(l => l.trim());
-        if (!currentLines.length) return;
+        if (!currentLines.length) {
+            showToast("Queue is empty");
+            return;
+        }
         currentIndex = 0; isStopped = false; isPaused = false;
         
         document.getElementById('prog-wrap').style.display = 'block';
@@ -366,6 +416,7 @@
                 document.getElementById('prog-bar').style.width = '100%';
                 setTimeout(() => document.getElementById('prog-wrap').style.display = 'none', 1000);
                 stopProcess();
+                showToast("Forging complete!");
             }
             return;
         }
@@ -391,7 +442,6 @@
         setTimeout(processBatch, 40);
     }
 
-    // --- CARD INJECTION & DYNAMIC EMBLEM GENERATOR ---
     function renderCard(pipe, num, mm, yy, cvv, ok, bin, id, idx) {
         const pass = document.getElementById('successCards'), fail = document.getElementById('deadCards');
         const card = document.createElement('div');
@@ -408,7 +458,6 @@
             card.setAttribute('data-fullpipe', fullPipe);
             card.setAttribute('data-search', `${bin.issuer} ${num} ${id.name}`.toLowerCase());
 
-            // Extract initials for fallback logo
             const initials = bin.issuer.replace(/[^A-Za-z]/g, '').substring(0, 2).toUpperCase() || 'BK';
             const bankFavicon = `https://www.google.com/s2/favicons?domain=${bin.domain}&sz=128`;
 
@@ -425,7 +474,7 @@
                         <span class="card-level">${bin.level} • ${bin.country}</span>
                     </div>
                 </div>
-                <div class="cc-num">${num.replace(/\d{4}(?=\d)/g, '$& ')}</div>
+                <div class="cc-num" onclick="copyCardNum('${num}', this)">${num.replace(/\d{4}(?=\d)/g, '$& ')}</div>
                 <div class="meta-row">
                     <span>EXP: ${mm}/${yy}</span>
                     <span>CVV: ${cvv}</span>
@@ -445,14 +494,13 @@
         } else {
             card.innerHTML = `
                 <span class="remove-card" onclick="this.parentElement.remove(); updateCounters();">✕</span>
-                <div class="cc-num" style="opacity:0.25">${num}</div>
+                <div class="cc-num" onclick="copyCardNum('${num}', this)" style="opacity:0.25">${num}</div>
                 <div style="font-size:0.6rem; color:var(--accent-red); font-family:monospace; letter-spacing:1px;">[X] CHECKSUM_REJECTED</div>
             `;
             fail.appendChild(card);
         }
     }
 
-    // --- SEARCH / FILTER FEATURE ---
     function filterCards() {
         const term = document.getElementById('cardFilter').value.toLowerCase();
         const cards = document.getElementById('successCards').getElementsByClassName('card');
@@ -462,11 +510,18 @@
         });
     }
 
-    // --- COPY & EXPORT UTILITIES ---
+    function copyCardNum(num, el) {
+        copyVal(num, el);
+        showToast("Card number copied");
+    }
+
     function copyVal(t, b) {
         const el = document.createElement('textarea'); el.value = t; document.body.appendChild(el);
         el.select(); document.execCommand('copy'); document.body.removeChild(el);
-        const old = b.innerText; b.innerText = "COPIED"; setTimeout(() => b.innerText = old, 800);
+        if (b && b.tagName === 'BUTTON') {
+            const old = b.innerText; b.innerText = "COPIED"; setTimeout(() => b.innerText = old, 800);
+        }
+        showToast("Copied to clipboard");
     }
 
     function copyAll(e, isFull) {
@@ -474,7 +529,12 @@
         const cards = Array.from(document.getElementById('successCards').children);
         const attr = isFull ? 'data-fullpipe' : 'data-pipe';
         const list = cards.map(c => c.getAttribute(attr)).filter(Boolean);
-        if (list.length) copyVal(list.join('\n'), e.target);
+        if (list.length) {
+            copyVal(list.join('\n'), e.target);
+            showToast(`Copied ${list.length} cards`);
+        } else {
+            showToast("No cards to copy");
+        }
     }
 
     function downloadResults(isAuth) {
@@ -482,13 +542,14 @@
         const cards = Array.from(document.getElementById(containerId).children);
         const attr = isAuth ? 'data-fullpipe' : 'data-pipe';
         const list = cards.map(c => c.getAttribute(attr) || c.querySelector('.cc-num')?.innerText.replace(/\s+/g, '')).filter(Boolean);
-        if(!list.length) return alert("No cards to export.");
+        if (!list.length) return showToast("No cards to export");
         
         const blob = new Blob([list.join('\n')], { type: 'text/plain' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = isAuth ? `authenticated_cards_${Date.now()}.txt` : `corrupted_cards_${Date.now()}.txt`;
         a.click();
+        showToast(`Exported ${list.length} cards`);
     }
 
     function luhnCheck(n) {
@@ -500,6 +561,9 @@
         }
         return s % 10 === 0 && num.length > 0;
     }
+
+    // Initialize line stats
+    updateLineStats();
 </script>
 </body>
 </html>
